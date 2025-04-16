@@ -40,7 +40,7 @@ function Clientes() {
       .then(data => { console.log(data) })
       .catch(err => { console.error(err)});
     console.log("Cliente cadastrado:", cliente);
-    
+     
   };
 
   return (
