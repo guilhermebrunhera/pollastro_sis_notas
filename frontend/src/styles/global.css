@@ -97,3 +97,43 @@ input {
 label {
   font-size: 1.2rem;
 }
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 2vh 0;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #3a3a3a;
+  padding: 1rem;
+  border-radius: 0.6rem;
+  margin-bottom: 1vh;
+  color: #fff;
+}
+
+li span {
+  flex: 1;  /* Faz com que cada item ocupe o máximo de espaço disponível */
+  text-align: left;
+}
+
+li .acoes {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.botao-icone {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.botao-icone:hover {
+  color: #7dd87d;
+}

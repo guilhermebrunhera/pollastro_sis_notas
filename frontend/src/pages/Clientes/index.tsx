@@ -1,8 +1,9 @@
 import './styles.css'
-import { useState } from 'react'
-import { getClientes, postNewCliente } from '../../services/APIService'
+import { useState, useEffect } from 'react'
+import { deleteCliente, getClientes, postNewCliente, putCliente } from '../../services/APIService'
 
 interface Cliente {
+  id?: number;
   nome: string;
   email: string;
   telefone: string;
@@ -11,9 +12,18 @@ interface Cliente {
 
 function Clientes() {
 
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
+  const [listaClientes, setListaClientes] = useState<Cliente[]>([]);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [clienteEditandoId, setClienteEditandoId] = useState<number | null>(null);
+
+  useEffect(() => {
+    listarClientes();
+  }, []);
+  
   function listarClientes() {
     getClientes()
-      .then(data => { console.log(data) })
+      .then(data => { setListaClientes(data); })
       .catch(err => { console.error(err)});
   }
 
@@ -24,8 +34,7 @@ function Clientes() {
     endereco: ""
   });
 
-  const [novoClienteOpen, setNovoClienteOpen] = useState(false)
-
+  
   const handleChangeCliente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCliente((prev) => ({
@@ -36,11 +45,54 @@ function Clientes() {
 
   const handleSubmitCliente = (e: React.FormEvent) => {
     e.preventDefault();
-    postNewCliente(cliente)
-      .then(data => { console.log(data) })
-      .catch(err => { console.error(err)});
-    console.log("Cliente cadastrado:", cliente);
-     
+  
+    if (modoEdicao && clienteEditandoId !== null) {
+      putCliente(clienteEditandoId, cliente)
+        .then(() => {
+          listarClientes();
+          setModoEdicao(false);
+          setClienteEditandoId(null);
+          setNovoClienteOpen(false);
+          setCliente({
+            nome: "",
+            email: "",
+            telefone: "",
+            endereco: ""
+          });
+        })
+        .catch(err => console.error(err));
+    } else {
+      // POST novo cliente
+      postNewCliente(cliente)
+        .then(data => {
+          if (data) {
+            listarClientes();
+            setNovoClienteOpen(false);
+            setCliente({
+              nome: "",
+              email: "",
+              telefone: "",
+              endereco: ""
+            });
+          } else {
+            console.error("Erro ao cadastrar cliente:", data);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  };
+
+  const excluirCliente = (id: number) => {
+    if (window.confirm("Tem certeza que deseja excluir este cliente?")) {
+      deleteCliente(id)
+        .then(() => {
+          // Atualiza a lista sem recarregar a página
+          setListaClientes(listaClientes.filter(cliente => cliente.id !== id));
+        })
+        .catch(err => {
+          console.error("Erro ao excluir cliente:", err);
+        });
+    }
   };
 
   return (
@@ -99,7 +151,7 @@ function Clientes() {
               />
             </div>
             <div>
-              <label>Endereço:</label>
+              <label>Endereço/Cidade:</label>
               <input
                 type="text"
                 name="endereco"
@@ -108,11 +160,44 @@ function Clientes() {
                 required
               />
             </div>
-            <button className='save' type="submit">Salvar Novo Cliente</button>
+            <button className='save' type="submit">
+              {modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Cliente'}
+            </button>
           </form>
         </div>
       :
-        <button onClick={listarClientes}></button> // mostrar Lista de clientes
+      <div style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <h2>Lista de Clientes</h2>
+        <ul>
+          {listaClientes.map((cliente) => (
+            <li key={cliente.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>
+                {cliente.nome} 
+              </span>
+              <span>
+                {cliente.endereco}
+              </span>
+              <div className='acoes'>
+                <button
+                  className="editar-cliente botao-icone"
+                  style={{ marginLeft: "1rem", cursor: "pointer" }}
+                  onClick={() => {
+                    setCliente(cliente);
+                    setModoEdicao(true);
+                    setClienteEditandoId(cliente.id ?? null);
+                    setNovoClienteOpen(true);
+                  }}
+                >
+                  ✏️
+                </button>
+                <button className="botao-icone" onClick={() => excluirCliente(cliente.id ? cliente.id : 0)}>
+                  🗑️
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
       }
     </div>
   );

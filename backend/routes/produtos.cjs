@@ -3,10 +3,10 @@ const router = express.Router();
 const controller = require('../controllers/produtosController.cjs');
 
 // Rotas básicas de CRUD
-router.get('/', controller.listarProdutos);
-router.get('/:id', controller.buscarProdutoPorId);
-router.post('/', controller.cadastrarProduto);
-router.put('/:id', controller.editarProduto);
-router.delete('/:id', controller.deletarProduto);
+router.get('/produtos', controller.listarProdutos);
+router.get('/produtos/:id', controller.buscarProdutoPorId);
+router.post('/produtos', controller.cadastrarProduto);
+router.put('/produtos/:id', controller.editarProduto);
+router.delete('/produtos/:id', controller.deletarProduto);
 
 module.exports = router;
