@@ -1,5 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-
+import { formatarReaisSemSimboloString } from "./utils/utils"
 import backgroundImage from '../assets/BLOCO_PEDIDO_POLLASTRO_CUT_NEW.png'; // use a imagem limpa sem escrita
 import { saveAs } from 'file-saver';
 
@@ -21,12 +21,7 @@ interface NotaData {
   produtos: Produto[];
 }
 
-function formatarReaisSemSimbolo(valor: string): string {
-    return parseFloat(valor).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-}
+
 
 export async function gerarNotaPDF(nota: NotaData) {
   const pdfDoc = await PDFDocument.create();
@@ -69,19 +64,19 @@ export async function gerarNotaPDF(nota: NotaData) {
 nota.produtos.forEach((item) => {
   drawText(item.quantidade.toString(), 8, y);                            // Quantidade
   drawText(item.nome, 60, y);                                           // Descrição
-  drawText(formatarReaisSemSimbolo(item.preco_unitario), 422, y);                      // Preço Unit.
-  drawText(formatarReaisSemSimbolo(item.preco_total), 510, y); // Valor
+  drawText(formatarReaisSemSimboloString(item.preco_unitario), 422, y);                      // Preço Unit.
+  drawText(formatarReaisSemSimboloString(item.preco_total), 510, y); // Valor
   y -= 18;
   total += parseFloat(item.preco_total)
 });
 
   // Total
-    drawText(formatarReaisSemSimbolo(String(total.toFixed(2))), 510, 60, 15);
+    drawText(formatarReaisSemSimboloString(String(total.toFixed(2))), 510, 60, 15);
 
   const pdfBytes = await pdfDoc.save();
 
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const pdfUrl = URL.createObjectURL(blob);
-  window.confirm("Deseja baixar este arquivo no seu computador?") ? saveAs(blob, "Nota de Serviço - " + nota.nome + " " + nota.data + ".pdf") : null;
+  window.confirm("Deseja baixar este arquivo no seu computador? \n\nClique em 'Cancelar' para somente abrir o arquivo.") ? saveAs(blob, "Nota de Serviço - " + nota.nome + " " + nota.data + ".pdf") : null;
   window.open(pdfUrl, '_blank');
 }

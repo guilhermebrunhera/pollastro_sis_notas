@@ -4,6 +4,7 @@ import Select from 'react-select';
 import { getClientes, getProdutos, getNotas, postNota, deleteNota, putNota, getProdutosID } from '../../services/APIService';
 import { format } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
+import { formatarReaisSemSimboloFloat } from '../../components/utils/utils';
 
 interface Cliente {
   id: number;
@@ -21,6 +22,7 @@ interface Produto {
   id: number;
   nome: string;
   preco: number;
+  descricao: string
 }
 
 interface NotaItem {
@@ -258,7 +260,7 @@ function Notas() {
               value={nota.status}
               onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' }))}
             >
-              <option value="Producao">Producao</option>
+              <option value="Producao">Em Produçao</option>
               <option value="Cancelada">Cancelada</option>
               <option value="Finalizada">Finalizada</option>
             </select>
@@ -266,7 +268,36 @@ function Notas() {
             <h3>Produtos</h3>
             {nota.itens.map((item, index) => (
               <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <select
+                <Select
+                  name="produto_id"  // Certificando que o name seja 'cliente_id'
+                  options={produtos.map(c => ({ value: c.id, label: c.nome + " - " + c.descricao }))}
+                  value={produtos.map(c => ({ value: c.id, label: c.nome + " - " + c.descricao })).find(op => op.value === item.produto_id)}
+                  onChange={(op) => {
+                    handleItemChange(index, 'produto_id', op ?  op.value : 0)
+                  }}
+                  placeholder="Digite ou Selecione o Produto Desejado"
+                  styles={{
+                    singleValue: (provided) => ({
+                      ...provided,
+                      color: 'black',
+                      width: '25rem'
+                    }),
+                    option: (provided) => ({
+                      ...provided,
+                      color: 'black',
+                    }),
+                    control: (provided) => ({
+                      ...provided,
+                      backgroundColor: 'white',
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      width: '25rem',
+                    }),
+                  }}
+                />
+                
+                {/* <select
                   value={item.produto_id}
                   onChange={(e) => handleItemChange(index, 'produto_id', parseInt(e.target.value))}
                 >
@@ -274,8 +305,9 @@ function Notas() {
                   {produtos.map(p => (
                     <option key={p.id} value={p.id}>{p.nome}</option>
                   ))}
-                </select>
+                </select> */}
                 <input
+                style={{maxWidth: '20%'}}
                   type="number"
                   placeholder="Qtd"
                   value={item.quantidade}
@@ -283,17 +315,17 @@ function Notas() {
                   onChange={(e) => handleItemChange(index, 'quantidade', e.target.value)}
                 />
                 <input
-                  type="number"
+                style={{maxWidth: '30%'}}
+                  type="text"
                   placeholder="Preço"
-                  step="0.01"
-                  value={item.quantidade > 1 ? item.preco_unitario * item.quantidade : item.preco_unitario}
+                  value={item.quantidade > 1 ? formatarReaisSemSimboloFloat(item.preco_unitario * item.quantidade) : formatarReaisSemSimboloFloat(item.preco_unitario)}
                   onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
                   disabled
                 />
                 <button type="button" onClick={() => removerItem(index)}>❌</button>
               </div>
             ))}
-            <button type="button" onClick={adicionarItem}>+ Produto</button>
+            <button type="button" className='default-form' onClick={adicionarItem}>+ Produto</button>
 
             <button className="save" type="submit">{modoEdicao ? 'Salvar Alterações' : 'Criar Nota'}</button>
           </form>

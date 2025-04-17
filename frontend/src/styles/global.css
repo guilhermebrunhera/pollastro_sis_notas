@@ -81,7 +81,25 @@ button.default:hover{
   cursor: pointer;
 }
 
-input {
+button.default-form{
+  border: none;
+  border-radius: 0.6rem;
+  height: 4vh;
+  width: 100%;
+  max-width: 100%;
+  background-color: #d3d3d3;
+  color: rgb(0, 0, 0);
+  font-size: 1.2rem;
+  padding: 0.6rem;
+}
+
+button.default-form:hover{
+  border: none;
+  background-color: #838383;
+  cursor: pointer;
+}
+
+input, select, option {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -91,7 +109,8 @@ input {
   font-size: 1.2rem;
   border: none;
   border-radius: 0.6rem;
-  padding-left: 0.6rem;
+  padding-left: 0.4rem;
+  padding-top: 0.4rem;
 }
 
 label {
