@@ -11,10 +11,22 @@ exports.listarProdutos = (req, res) => {
 // Buscar produto por ID
 exports.buscarProdutoPorId = (req, res) => {
     const id = req.params.id;
-    db.query('SELECT * FROM produtos WHERE id = ?', [id], (err, results) => {
+    db.query(`SELECT 
+	produtos.preco as preco_unitario,
+	nota_itens.quantidade as quantidade,
+	CONCAT(produtos.nome, " - ", produtos.descricao) as nome,
+    (produtos.preco * nota_itens.quantidade) as preco_total
+FROM 
+	notas
+	JOIN nota_itens ON notas.id = nota_itens.nota_id
+	JOIN produtos ON nota_itens.produto_id = produtos.id
+WHERE 
+	notas.id = ?
+ORDER BY 
+	notas.id DESC`, [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         if (results.length === 0) return res.status(404).json({ error: 'Produto não encontrado' });
-        res.json(results[0]);
+        res.json(results);
     });
 };
 

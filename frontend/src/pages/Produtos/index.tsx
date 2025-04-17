@@ -1,97 +1,183 @@
 import './styles.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { deleteProduto, getProdutos, postNewProduto, putProduto } from '../../services/APIService'
+import { NumericFormat } from 'react-number-format';
 
 interface Produto {
+  id?: number;
   nome: string;
   descricao: string;
   preco: number;
 }
 
 function Produtos() {
+
+  const [novoProdutoOpen, setNovoProdutoOpen] = useState(false);
+  const [listaProdutos, setListaProdutos] = useState<Produto[]>([]);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [produtoEditandoId, setProdutoEditandoId] = useState<number | null>(null);
+
+  useEffect(() => {
+    listarProdutos();
+  }, []);
+
+  function listarProdutos() {
+    getProdutos()
+      .then(data => { setListaProdutos(data); })
+      .catch(err => { console.error(err)});
+  }
+
   const [produto, setProduto] = useState<Produto>({
-      nome: "",
-      descricao: "",
-      preco: 0
-    });
-  
-    const [novoProdutoOpen, setNovoProdutoOpen] = useState(false)
-  
-    const handleChangeProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setProduto((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
-  
-    const handleSubmitProduto = (e: React.FormEvent) => {
-      e.preventDefault();
-      console.log("Produto cadastrado:", produto);
-      // Aqui você pode usar axios para enviar ao backend
-    };
-  
-    return (
-      <div className='content-produtos'>
-        <center>
-          <button 
-            className='default' 
-            onClick={
-              () => {
-                setNovoProdutoOpen(!novoProdutoOpen)
-                setProduto(() => ({
-                  nome : "",
-                  preco: 0,
-                  descricao: ""
-                }));
-              }
-            }
-          >
-            {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
-          </button>
-        </center>
-        
-  
-        {novoProdutoOpen ? 
-          <div className='div-form-produtos' style={{ maxWidth: "80%", margin: "0 auto" }}>
-            <h2>Cadastrar Novo Produto</h2>
-            <form onSubmit={handleSubmitProduto}>
-              <div>
-                <label>Nome do Produto:</label>
-                <input
-                  type="text"
-                  name="nome"
-                  value={produto.nome}
-                  onChange={handleChangeProduto}
-                  required
-                />
+    nome: "",
+    descricao: "",
+    preco: 0
+  });
+
+  const handleChangeProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProduto((prev) => ({
+      ...prev,
+      [name]: name === "preco" ? parseFloat(value) : value,
+    }));
+  };
+
+  const handleSubmitProduto = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (modoEdicao && produtoEditandoId !== null) {
+      putProduto(produtoEditandoId, produto)
+        .then(() => {
+          listarProdutos();
+          setModoEdicao(false);
+          setProdutoEditandoId(null);
+          setNovoProdutoOpen(false);
+          setProduto({ nome: '', descricao: '', preco: 0 });
+        })
+        .catch(err => console.error(err));
+    } else {
+      postNewProduto(produto)
+        .then(data => {
+          if (data) {
+            listarProdutos();
+            setNovoProdutoOpen(false);
+            setProduto({ nome: '', descricao: '', preco: 0 });
+          } else {
+            console.error("Erro ao cadastrar produto:", data);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  };
+
+  const excluirProduto = (id: number) => {
+    if (window.confirm("Tem certeza que deseja excluir este produto?")) {
+      deleteProduto(id)
+        .then(() => {
+          setListaProdutos(listaProdutos.filter(produto => produto.id !== id));
+        })
+        .catch(err => {
+          console.error("Erro ao excluir produto:", err);
+        });
+    }
+  };
+
+  return (
+    <div className='content-clientes'>
+      <center>
+        <button 
+          className='default' 
+          onClick={() => {
+            setNovoProdutoOpen(!novoProdutoOpen);
+            setProduto({ nome: '', descricao: '', preco: 0 });
+          }}
+        >
+          {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
+        </button>
+      </center>
+
+      {novoProdutoOpen ? 
+        <div className='div-form-clientes' style={{ maxWidth: "80%", margin: "0 auto" }}>
+          <h2>Cadastrar Novo Produto</h2>
+          <form onSubmit={handleSubmitProduto}>
+            <div>
+              <label>Nome do Produto:</label>
+              <input
+                type="text"
+                name="nome"
+                value={produto.nome}
+                onChange={handleChangeProduto}
+                required
+              />
+            </div>
+            <div>
+              <label>Descrição/Fabricante:</label>
+              <input
+                type="text"
+                name="descricao"
+                value={produto.descricao}
+                onChange={handleChangeProduto}
+                required
+              />
+            </div>
+            <div>
+              <label>Preço:</label>
+              <NumericFormat
+                thousandSeparator="."
+                decimalSeparator=","
+                decimalScale={2}
+                fixedDecimalScale
+                allowNegative={false}
+                name="preco"
+                value={produto.preco}
+                onValueChange={(values) => {
+                  const { floatValue } = values;
+                  setProduto((prev) => ({
+                    ...prev,
+                    preco: floatValue || 0,
+                  }));
+                }}
+                className="input"
+                required
+              />
+            </div>
+            <button className='save' type="submit">
+              {modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Produto'}
+            </button>
+          </form>
+        </div>
+      :
+      <div style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <h2>Lista de Produtos</h2>
+        <ul>
+          {listaProdutos.map((produto) => (
+            <li key={produto.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>{produto.nome}</span>
+              <span>{produto.descricao}</span>
+              <span>R$ {produto.preco}</span>
+              <div className='acoes'>
+                <button
+                  className="editar-cliente botao-icone"
+                  style={{ marginLeft: "1rem", cursor: "pointer" }}
+                  onClick={() => {
+                    setProduto(produto);
+                    setModoEdicao(true);
+                    setProdutoEditandoId(produto.id ?? null);
+                    setNovoProdutoOpen(true);
+                  }}
+                >
+                  ✏️
+                </button>
+                <button className="botao-icone" onClick={() => excluirProduto(produto.id ?? 0)}>
+                  🗑️
+                </button>
               </div>
-              <div>
-                <label>Descrição/Fabricante do Produto</label>
-                <input
-                  type="text"
-                  name="descricao"
-                  value={produto.descricao}
-                  onChange={handleChangeProduto}
-                />
-              </div>
-              <div>
-                <label>Preço:</label>
-                <input
-                  type="number"
-                  name="preco"
-                  value={produto.preco}
-                  onChange={handleChangeProduto}
-                  required
-                />
-              </div>
-              <button className='save' type="submit">Salvar Novo Produto</button>
-            </form>
-          </div>
-        :
-          <div></div> // mostrar Lista de produtos
-        }
+            </li>
+          ))}
+        </ul>
       </div>
-    );
+      }
+    </div>
+  );
 }
 
-export default Produtos
+export default Produtos;

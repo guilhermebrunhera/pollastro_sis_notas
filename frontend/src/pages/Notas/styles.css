@@ -4,3 +4,7 @@
     padding-right: 10vh;
     width: 100vw;
 }
+
+input, option, .css-19bb58m {
+    color: black;
+}
