@@ -12,7 +12,7 @@ interface Produto {
     id?: number;
     nome: string;
     descricao: string;
-    preco: number;
+    preco: string;
   }
 
 const API_URL = "http://localhost:3000";
@@ -62,12 +62,14 @@ export async function getProdutosID(id: number) {
 }
 
 export async function postNewProduto(produto: Produto){
-    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : produto.preco, descricao : produto.descricao})
+    produto.preco = produto.preco.replace(",", ".");
+    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : parseFloat(produto.preco), descricao : produto.descricao})
     return response.data
 }
 
 export async function putProduto(id: number, produto: Produto) {
     try {
+      produto.preco = String(parseFloat(produto.preco.replace(",", ".")))
       const response = await axios.put(`${API_URL}/produtos/${id}`, produto);
       return response.data;
     } catch (error) {
@@ -124,5 +126,17 @@ export const putNota = async (id: number, nota: {
   }[];
 }) => {
   const res = await axios.put(`${API_URL}/notas/${id}`, nota);  // Corrigido aqui
+  return res.data;
+};
+
+export const alterStatusNota = async (id: number, status: string) => {
+  const res = await axios.put(`${API_URL}/notasAlterStatus/${id}/${status}`, status);
+  return res.data;
+}
+
+// ____________________________________________________ HOME ______________________________________//
+
+export const getDadosHome = async () => {
+  const res = await axios.get(`${API_URL}/`);
   return res.data;
 };

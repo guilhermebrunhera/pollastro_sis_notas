@@ -1,13 +1,14 @@
 import './styles.css'
 import { useState, useEffect } from 'react'
 import { deleteProduto, getProdutos, postNewProduto, putProduto } from '../../services/APIService'
-import { NumericFormat } from 'react-number-format';
+// import { NumericFormat } from 'react-number-format';
+import { formatarReaisSemSimboloString } from '../../components/utils/utils';
 
 interface Produto {
   id?: number;
   nome: string;
   descricao: string;
-  preco: number;
+  preco: string;
 }
 
 function Produtos() {
@@ -30,8 +31,20 @@ function Produtos() {
   const [produto, setProduto] = useState<Produto>({
     nome: "",
     descricao: "",
-    preco: 0
+    preco: "0,00"
   });
+
+  const handleChangeValorProduto = (e: string) => {
+    const raw = e.replace(/\D/g, ''); // só números
+    const cents = parseInt(raw || '0', 10);
+
+    const formatted = (cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return formatted;
+  };
 
   const handleChangeProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,7 +64,7 @@ function Produtos() {
           setModoEdicao(false);
           setProdutoEditandoId(null);
           setNovoProdutoOpen(false);
-          setProduto({ nome: '', descricao: '', preco: 0 });
+          setProduto({ nome: '', descricao: '', preco: "0,00" });
         })
         .catch(err => console.error(err));
     } else {
@@ -60,7 +73,7 @@ function Produtos() {
           if (data) {
             listarProdutos();
             setNovoProdutoOpen(false);
-            setProduto({ nome: '', descricao: '', preco: 0 });
+            setProduto({ nome: '', descricao: '', preco: "0,00" });
           } else {
             console.error("Erro ao cadastrar produto:", data);
           }
@@ -88,7 +101,7 @@ function Produtos() {
           className='default' 
           onClick={() => {
             setNovoProdutoOpen(!novoProdutoOpen);
-            setProduto({ nome: '', descricao: '', preco: 0 });
+            setProduto({ nome: '', descricao: '', preco: "0,00" });
           }}
         >
           {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
@@ -121,7 +134,7 @@ function Produtos() {
             </div>
             <div>
               <label>Preço:</label>
-              <NumericFormat
+              {/* <NumericFormat
                 thousandSeparator="."
                 decimalSeparator=","
                 decimalScale={2}
@@ -138,6 +151,18 @@ function Produtos() {
                 }}
                 className="input"
                 required
+              /> */}
+              <input
+                type="text"
+                inputMode="numeric"
+                value={produto.preco}
+                onChange={(input) => {
+                  let valor = handleChangeValorProduto(input.target.value);
+                  setProduto((prev) => ({
+                    ...prev,
+                    preco: valor || "0,00",
+                  }));
+                }}
               />
             </div>
             <button className='save' type="submit">
@@ -153,12 +178,13 @@ function Produtos() {
             <li key={produto.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{produto.nome}</span>
               <span>{produto.descricao}</span>
-              <span>R$ {produto.preco}</span>
+              <span>R$ {formatarReaisSemSimboloString(produto.preco)}</span>
               <div className='acoes'>
                 <button
                   className="editar-cliente botao-icone"
                   style={{ marginLeft: "1rem", cursor: "pointer" }}
                   onClick={() => {
+                    produto.preco = handleChangeValorProduto(produto.preco)
                     setProduto(produto);
                     setModoEdicao(true);
                     setProdutoEditandoId(produto.id ?? null);

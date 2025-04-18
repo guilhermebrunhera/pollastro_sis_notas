@@ -7,5 +7,6 @@ router.get('/notas', controller.listarNotas);
 router.get('/notas/:id', controller.detalharNota);
 router.post('/notas', controller.criarNota);
 router.delete('/notas/:id', controller.deletarNota);
+router.put('/notasAlterStatus/:id/:status', controller.alterStatusNota);
 
 module.exports = router;

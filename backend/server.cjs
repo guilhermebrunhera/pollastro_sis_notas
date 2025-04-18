@@ -10,6 +10,7 @@ app.use(bodyParser.json());
 app.use(require('./routes/clientes.cjs'));
 app.use(require('./routes/produtos.cjs'));
 app.use(require('./routes/notas.cjs'));
+app.use(require('./routes/home.cjs'));
 
 app.listen(3000, () => {
     console.log('Servidor rodando na porta 3000');

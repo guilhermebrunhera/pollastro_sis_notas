@@ -3,10 +3,23 @@ const db = require('../db.cjs');
 // Listar todas as notas (sem itens)
 exports.listarNotas = (req, res) => {
     const sql = `
-        SELECT notas.id, clientes.nome AS cliente, clientes.endereco AS endereco, clientes.telefone AS telefone, COALESCE(clientes.email, '') AS email, data_emissao, status
-        FROM notas
-        JOIN clientes ON notas.cliente_id = clientes.id
-        ORDER BY notas.id DESC
+        SELECT 
+            notas.id, 
+            clientes.nome AS cliente, 
+            clientes.endereco AS endereco, 
+            clientes.telefone AS telefone, 
+            COALESCE(clientes.email, '') AS email, 
+            data_emissao, 
+            status,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota
+        FROM 
+            notas
+            JOIN clientes ON notas.cliente_id = clientes.id
+            JOIN nota_itens ON notas.id = nota_itens.nota_id
+        GROUP BY
+            notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
+        ORDER BY 
+            notas.id DESC
     `;
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ error: err });
@@ -117,5 +130,23 @@ exports.deletarNota = (req, res) => {
             if (err2) return res.status(500).json({ error: err2 });
             res.json({ message: 'Nota e itens deletados com sucesso' });
         });
+    });
+};
+
+// Atualizar nota e seus itens (NOVO)
+exports.alterStatusNota = (req, res) => {
+    const notaId = req.params.id;
+    const status = req.params.status;
+
+    const updateNotaSQL = `
+        UPDATE notas
+        SET status = ?
+        WHERE id = ?
+    `;
+
+    db.query(updateNotaSQL, [status, notaId], (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        res.json({message: "Status da nota atualizada com successo!"})
     });
 };

@@ -1,10 +1,10 @@
 import './styles.css';
 import { useState, useEffect } from 'react';
 import Select from 'react-select';
-import { getClientes, getProdutos, getNotas, postNota, deleteNota, putNota, getProdutosID } from '../../services/APIService';
+import { getClientes, getProdutos, getNotas, postNota, deleteNota, putNota, getProdutosID, alterStatusNota } from '../../services/APIService';
 import { format } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
-import { formatarReaisSemSimboloFloat } from '../../components/utils/utils';
+import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
 
 interface Cliente {
   id: number;
@@ -42,6 +42,7 @@ interface Nota {
   endereco?: string;
   telefone?: string;
   email?: string;
+  totalNota?: string;
 }
 
 function Notas() {
@@ -174,7 +175,6 @@ function Notas() {
   function carregarNotaParaPDF(id: number, nota: Nota) {
     getProdutosID(id)
       .then((data: ProdutosDaNota[]) => {
-        console.log(data)
         gerarNotaPDF(
           {
             nome : nota.cliente ? nota.cliente : "",
@@ -338,7 +338,31 @@ function Notas() {
               <li key={nota.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Nota {nota.cliente} #{nota.id}</span>
                 <span>{format(nota.data_emissao, "dd/MM/yyyy")}</span>
-                <span>{nota.status === 'Producao' ?  'Em Produção' : nota.status === 'Cancelada' ? 'Cancelada' : 'Finalizada'}</span>
+                <span>{nota.totalNota ? formatarReaisSemSimboloString(nota.totalNota) : ""}</span>
+                <span>
+                  {nota.status === "Finalizada" ? 
+                    <span>{nota.status}</span>
+                  :
+                  <select
+                    value={nota.status}
+                    onChange={async (e) => {
+                      const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada';
+                      try {
+                        await alterStatusNota(nota.id!, novoStatus);
+                        setNotas(prev =>
+                          prev.map(n => n.id === nota.id ? { ...n, status: novoStatus } : n)
+                        );
+                      } catch (err) {
+                        console.error('Erro ao atualizar status:', err);
+                      }
+                    }}
+                  >
+                    <option value="Producao">Em Produção</option>
+                    <option value="Cancelada">Cancelada</option>
+                    <option value="Finalizada">Finalizada</option>
+                  </select>
+                  }
+                </span>
                 <div className="acoes">
                   <button className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota)}>📑</button>
                   <button className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button>
