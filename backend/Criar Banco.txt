@@ -1,0 +1,41 @@
+CREATE DATABASE IF NOT EXISTS pollastro_sistema;
+USE pollastro_sistema;
+
+-- Tabela de clientes
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    email VARCHAR(100),
+    endereco TEXT
+);
+
+-- Tabela de produtos ou serviços
+CREATE TABLE produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    preco DECIMAL(10,2) NOT NULL
+);
+
+-- Tabela de notas de serviço
+CREATE TABLE notas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT NOT NULL,
+    data_emissao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    observacoes TEXT,
+    status ENUM('Producao', 'Cancelada', 'Finalizada') DEFAULT 'Producao',
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+
+);
+
+-- Tabela de itens da nota (relaciona produtos/serviços à nota)
+CREATE TABLE nota_itens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nota_id INT NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade INT DEFAULT 1,
+    preco_unitario DECIMAL(10,2),
+    FOREIGN KEY (nota_id) REFERENCES notas(id),
+    FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);
