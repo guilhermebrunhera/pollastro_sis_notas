@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getDadosHome } from '../../services/APIService'
 import './styles.css'
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
-import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
+import { formatarReaisSemSimboloString } from '../../components/utils/utils';
 
 interface DadosHome {
   countProdutos: number;
