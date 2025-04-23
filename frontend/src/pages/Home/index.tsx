@@ -63,7 +63,7 @@ function Home() {
               label
             >
               {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{cursor: "pointer"}} onClick={() => {window.location.href = `http://localhost:5173/${_.pathName}`}}/>
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{cursor: "pointer"}} onClick={() => {window.location.href = `http://localhost:3010/${_.pathName}`}}/>
               ))}
             </Pie>
             <Legend />
@@ -72,7 +72,7 @@ function Home() {
       </div>
       <div style={{height: 200, width: 500, margin: 110, padding: 0}}>
         <ResponsiveContainer>
-          <BarChart data={barData} layout='vertical' style={{cursor: "pointer"}} onClick={() => {window.location.href = `http://localhost:5173/${barData[0].pathName}`}} >
+          <BarChart data={barData} layout='vertical' style={{cursor: "pointer"}} onClick={() => {window.location.href = `http://localhost:3010/${barData[0].pathName}`}} >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type='number' />
             <YAxis type='category' dataKey="name" hide />

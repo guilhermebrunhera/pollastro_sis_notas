@@ -1,3 +1,3 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run chr(34) & "C:\Users\Guilherme Brunhera\Desktop\Pollastro_notas_reactVite\init_server.bat" & Chr(34), 0, false
+WshShell.Run chr(34) & "C:\Users\Pollastro\Desktop\pollastro_sis_notas\init_server.bat" & Chr(34)
 Set WshShell = Nothing
