@@ -2,13 +2,14 @@ import './styles.css'
 import { useState, useEffect } from 'react'
 import { deleteProduto, getProdutos, postNewProduto, putProduto } from '../../services/APIService'
 // import { NumericFormat } from 'react-number-format';
-import { formatarReaisSemSimboloString } from '../../components/utils/utils';
+import { formatarReaisSemSimboloString, removerAcentosTexto } from '../../components/utils/utils';
 
 interface Produto {
   id?: number;
   nome: string;
   descricao: string;
   preco: string;
+  tipo: string;
 }
 
 function Produtos() {
@@ -17,21 +18,30 @@ function Produtos() {
   const [listaProdutos, setListaProdutos] = useState<Produto[]>([]);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [produtoEditandoId, setProdutoEditandoId] = useState<number | null>(null);
+  const [tipoSelecionado, setTipoSelecionado] = useState<'S' | 'P'>('P');
+  const [termoFiltro, setTermoFiltro] = useState('');
 
   useEffect(() => {
     listarProdutos();
+    setTipoSelecionado(`P`)
   }, []);
 
   function listarProdutos() {
     getProdutos()
-      .then(data => { setListaProdutos(data); })
+      .then(data => { setListaProdutos(data);})
       .catch(err => { console.error(err)});
   }
+
+  const produtosFiltrados = listaProdutos.filter(produto =>
+    removerAcentosTexto(produto.nome).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
+    removerAcentosTexto(produto.descricao).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase())
+  );
 
   const [produto, setProduto] = useState<Produto>({
     nome: "",
     descricao: "",
-    preco: "0,00"
+    preco: "0,00",
+    tipo: "P"
   });
 
   const handleChangeValorProduto = (e: string) => {
@@ -64,7 +74,8 @@ function Produtos() {
           setModoEdicao(false);
           setProdutoEditandoId(null);
           setNovoProdutoOpen(false);
-          setProduto({ nome: '', descricao: '', preco: "0,00" });
+          setTipoSelecionado('P');
+          setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
         })
         .catch(err => console.error(err));
     } else {
@@ -73,7 +84,8 @@ function Produtos() {
           if (data) {
             listarProdutos();
             setNovoProdutoOpen(false);
-            setProduto({ nome: '', descricao: '', preco: "0,00" });
+            setTipoSelecionado('P');
+            setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
           } else {
             console.error("Erro ao cadastrar produto:", data);
           }
@@ -101,7 +113,7 @@ function Produtos() {
           className='default' 
           onClick={() => {
             setNovoProdutoOpen(!novoProdutoOpen);
-            setProduto({ nome: '', descricao: '', preco: "0,00" });
+            setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
           }}
         >
           {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
@@ -129,29 +141,10 @@ function Produtos() {
                 name="descricao"
                 value={produto.descricao}
                 onChange={handleChangeProduto}
-                required
               />
             </div>
             <div>
               <label>Preço:</label>
-              {/* <NumericFormat
-                thousandSeparator="."
-                decimalSeparator=","
-                decimalScale={2}
-                fixedDecimalScale
-                allowNegative={false}
-                name="preco"
-                value={produto.preco}
-                onValueChange={(values) => {
-                  const { floatValue } = values;
-                  setProduto((prev) => ({
-                    ...prev,
-                    preco: floatValue || 0,
-                  }));
-                }}
-                className="input"
-                required
-              /> */}
               <input
                 type="text"
                 inputMode="numeric"
@@ -165,6 +158,24 @@ function Produtos() {
                 }}
               />
             </div>
+            <div>
+              <label>Tipo de Produto:</label>
+              <select
+                name='tipo'
+                value={tipoSelecionado}
+                onChange={(e) => {
+                  setTipoSelecionado(e.target.value as 'S' | 'P')
+                  setProduto((prev) => ({
+                    ...prev,
+                    tipo: e.target.value || "P",
+                  }));
+                }}
+                
+              >
+                <option value="P">Produto</option>
+                <option value="S">Serviço</option>
+              </select>
+            </div>
             <button className='save' type="submit">
               {modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Produto'}
             </button>
@@ -172,9 +183,17 @@ function Produtos() {
         </div>
       :
       <div style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <h3>Filtro:</h3>
+        <input
+          type="text"
+          placeholder="Filtrar produtos..."
+          value={termoFiltro}
+          onChange={(e) => setTermoFiltro(e.target.value)}
+          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
+        />
         <h2>Lista de Produtos</h2>
         <ul>
-          {listaProdutos.map((produto) => (
+          {produtosFiltrados.map((produto) => (
             <li key={produto.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{produto.nome}</span>
               <span>{produto.descricao}</span>
@@ -186,6 +205,7 @@ function Produtos() {
                   onClick={() => {
                     produto.preco = handleChangeValorProduto(produto.preco)
                     setProduto(produto);
+                    setTipoSelecionado(produto.tipo as `S`|`P`)
                     setModoEdicao(true);
                     setProdutoEditandoId(produto.id ?? null);
                     setNovoProdutoOpen(true);

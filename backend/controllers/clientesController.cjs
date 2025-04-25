@@ -2,7 +2,7 @@ const db = require('../db.cjs');
 
 // Listar todos os clientes
 exports.listarClientes = (req, res) => {
-    db.query('SELECT * FROM clientes', (err, results) => {
+    db.query('SELECT * FROM clientes ORDER BY nome ASC', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });

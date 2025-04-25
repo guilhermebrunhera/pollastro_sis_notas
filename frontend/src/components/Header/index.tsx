@@ -1,12 +1,16 @@
 import { useLocation, NavLink } from 'react-router-dom'
 import './styles.css'
+import imgLogo from '../../assets/pollastro_logo.png'
 
 function Header() {
     const localAtivo = useLocation();
 
     return(
         <header>
-            <h2>Pollastro Notas de Serviço</h2>
+            <div>
+                <img src={imgLogo}></img>
+                <h2>Pollastro Metalurgia</h2>
+            </div>
             <div>
                 <NavLink style={() => ({
                     color: localAtivo.pathname === "/" ? "gray" : "white",
@@ -27,7 +31,7 @@ function Header() {
                     color: localAtivo.pathname === "/Notas" ? "gray" : "white",
                     cursor: localAtivo.pathname === "/Notas" ? "default" : "pointer",
                     textDecoration: localAtivo.pathname === "/Notas" ? "none" : ""
-                })} to='/Notas'>Notas de Serviço</NavLink>
+                })} to='/Notas'>Pedidos</NavLink>
             </div>
         </header>
     )

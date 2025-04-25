@@ -24,3 +24,8 @@ header div a:hover{
     color:rgb(102, 140, 173);
     text-decoration: underline;
 }
+
+header img {
+    width: 4rem;
+    height: inherit;
+}

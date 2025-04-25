@@ -11,3 +11,7 @@ export function formatarReaisSemSimboloFloat(valor: number): string {
       maximumFractionDigits: 2,
     });
 }
+
+export function removerAcentosTexto (texto: string): string {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};

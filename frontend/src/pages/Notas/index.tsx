@@ -22,7 +22,8 @@ interface Produto {
   id: number;
   nome: string;
   preco: number;
-  descricao: string
+  descricao: string;
+  tipo: string
 }
 
 interface NotaItem {
@@ -45,6 +46,15 @@ interface Nota {
   totalNota?: string;
 }
 
+const formatarCentavosParaBRL = (centavos: number) => {
+  const reais = centavos / 100;
+  return reais.toLocaleString("pt-BR", {
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 function Notas() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -52,6 +62,7 @@ function Notas() {
   const [novaNotaOpen, setNovaNotaOpen] = useState(false);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [notaEditandoId, setNotaEditandoId] = useState<number | null>(null);
+  const [centavos, setCentavos] = useState(0);
 
   const [nota, setNota] = useState<Nota>({
     cliente_id: 0,
@@ -95,8 +106,11 @@ function Notas() {
           preco_unitario: produtoSelecionado.preco
         };
       }
-    } else {
-      novosItens[index][field] = typeof value === 'string' ? parseFloat(value) : value;
+    } else if (field === 'preco_unitario') {
+      const valorNumerico = typeof value === 'string'
+      ? parseFloat(value.replace(',', '.'))
+      : value;
+      novosItens[index][field] = isNaN(valorNumerico) ? 0 : valorNumerico;
     }
     
     setNota(prev => ({ ...prev, itens: novosItens }));
@@ -117,6 +131,8 @@ function Notas() {
 
   const handleSubmitNota = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log(nota)
     try {
       // Certifique-se de que cliente_id está correto antes de enviar
       if (nota.cliente_id === 0) {
@@ -145,6 +161,16 @@ function Notas() {
     }
   };
 
+  const handleChangeValorProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const apenasNumeros = e.target.value.replace(/\D/g, ""); // remove tudo que não for número
+
+    // Limita o valor a no máximo 9 dígitos (R$ 99.999.999,99)
+    const valorLimpo = apenasNumeros.slice(0, 9);
+
+    const novoValor = parseInt(valorLimpo || "0", 10); // se vazio, volta pra 0
+    setCentavos(novoValor);
+    
+  };
   // const iniciarEdicao = (id: number) => {
   //   const notaSelecionada = notas.find(n => n.id === id);
   //   if (!notaSelecionada) return;
@@ -205,13 +231,13 @@ function Notas() {
             itens: []
           });
         }}>
-          {novaNotaOpen ? 'Cancelar Cadastro' : '+ Nova Nota'}
+          {novaNotaOpen ? 'Cancelar Pedido' : '+ Novo Pedido'}
         </button>
       </center>
 
       {novaNotaOpen ? (
         <div className="div-form-clientes" style={{ maxWidth: '80%', margin: '0 auto' }}>
-          <h2>{modoEdicao ? 'Editar Nota' : 'Nova Nota'}</h2>
+          <h2>{modoEdicao ? 'Editar Pedido' : 'Novo Pedido'}</h2>
           <form onSubmit={handleSubmitNota}>
             <label>Cliente:</label>
             <Select
@@ -267,6 +293,7 @@ function Notas() {
 
             <h3>Produtos</h3>
             {nota.itens.map((item, index) => (
+
               <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <Select
                   name="produto_id"  // Certificando que o name seja 'cliente_id'
@@ -314,29 +341,56 @@ function Notas() {
                   min="1"
                   onChange={(e) => handleItemChange(index, 'quantidade', e.target.value)}
                 />
-                <input
-                style={{maxWidth: '30%'}}
-                  type="text"
-                  placeholder="Preço"
-                  value={item.quantidade > 1 ? formatarReaisSemSimboloFloat(item.preco_unitario * item.quantidade) : formatarReaisSemSimboloFloat(item.preco_unitario)}
-                  onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
-                  disabled
-                />
+                
+                {(() => {
+                  const produtoSelecionado = produtos.find(p => p.id === item.produto_id);
+                  const isServico = produtoSelecionado?.tipo === 'S';
+
+                  if (isServico) {
+                    return (
+                      <input
+                        type="text"
+                        value={formatarCentavosParaBRL(centavos)}
+                        onChange={(e) => {
+                          handleChangeValorProduto(e);
+                          handleItemChange(index, `preco_unitario`, centavos / 10)
+                        }}
+                        style={{ maxWidth: "200px", fontSize: "16px", padding: "4px" }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <input
+                        style={{ maxWidth: '30%' }}
+                        type="text"
+                        placeholder="Preço (Produto)"
+                        value={
+                          item.quantidade > 1
+                            ? formatarReaisSemSimboloFloat(item.preco_unitario * item.quantidade)
+                            : formatarReaisSemSimboloFloat(item.preco_unitario)
+                        }
+                        onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
+                        disabled={true}
+                      />
+                    );
+                  }
+                })()}
                 <button type="button" onClick={() => removerItem(index)}>❌</button>
               </div>
             ))}
             <button type="button" className='default-form' onClick={adicionarItem}>+ Produto</button>
 
-            <button className="save" type="submit">{modoEdicao ? 'Salvar Alterações' : 'Criar Nota'}</button>
+            <button className="save" type="submit">{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
           </form>
         </div>
       ) : (
         <div style={{ maxWidth: '80%', margin: '0 auto' }}>
-          <h2>Notas Emitidas</h2>
+          <h2>Pedidos:</h2>
           <ul>
             {notas.map(nota => (
               <li key={nota.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Nota {nota.cliente} #{nota.id}</span>
+                <span>Pedido {nota.id}</span>
+                <span>{nota.cliente}</span>
                 <span>{format(nota.data_emissao, "dd/MM/yyyy")}</span>
                 <span>{nota.totalNota ? formatarReaisSemSimboloString(nota.totalNota) : ""}</span>
                 <span>

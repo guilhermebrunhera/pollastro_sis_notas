@@ -2,7 +2,7 @@ const db = require('../db.cjs');
 
 // Listar todos os produtos
 exports.listarProdutos = (req, res) => {
-    db.query('SELECT * FROM produtos', (err, results) => {
+    db.query('SELECT * FROM produtos ORDER BY nome ASC', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -12,10 +12,11 @@ exports.listarProdutos = (req, res) => {
 exports.buscarProdutoPorId = (req, res) => {
     const id = req.params.id;
     db.query(`SELECT 
-	produtos.preco as preco_unitario,
+	nota_itens.preco_unitario as preco_unitario,
 	nota_itens.quantidade as quantidade,
-	CONCAT(produtos.nome, " - ", produtos.descricao) as nome,
-    (produtos.preco * nota_itens.quantidade) as preco_total
+	CONCAT(produtos.nome, IF(produtos.descricao != '', CONCAT(' - ', produtos.descricao), '')) as nome,
+    (nota_itens.preco_unitario * nota_itens.quantidade) as preco_total,
+    produtos.tipo
 FROM 
 	notas
 	JOIN nota_itens ON notas.id = nota_itens.nota_id
@@ -32,10 +33,10 @@ ORDER BY
 
 // Cadastrar novo produto
 exports.cadastrarProduto = (req, res) => {
-    const { nome, descricao, preco } = req.body;
+    const { nome, descricao, preco, tipo } = req.body;
     db.query(
-        'INSERT INTO produtos (nome, descricao, preco) VALUES (?, ?, ?)',
-        [nome, descricao, preco],
+        'INSERT INTO produtos (nome, descricao, preco, tipo) VALUES (?, ?, ?, ?)',
+        [nome, descricao, preco, tipo],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
             res.status(201).json({ id: result.insertId, message: 'Produto cadastrado com sucesso' });
@@ -46,10 +47,10 @@ exports.cadastrarProduto = (req, res) => {
 // Editar produto
 exports.editarProduto = (req, res) => {
     const id = req.params.id;
-    const { nome, descricao, preco } = req.body;
+    const { nome, descricao, preco, tipo } = req.body;
     db.query(
-        'UPDATE produtos SET nome = ?, descricao = ?, preco = ? WHERE id = ?',
-        [nome, descricao, preco, id],
+        'UPDATE produtos SET nome = ?, descricao = ?, preco = ?, tipo = ? WHERE id = ?',
+        [nome, descricao, preco, tipo, id],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
             res.json({ message: 'Produto atualizado com sucesso' });

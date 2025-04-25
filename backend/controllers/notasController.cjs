@@ -27,6 +27,34 @@ exports.listarNotas = (req, res) => {
     });
 };
 
+
+exports.listarNotasItem = (req, res) => {
+    const sql = `
+        SELECT 
+            notas.id, 
+            clientes.nome AS cliente, 
+            clientes.endereco AS endereco, 
+            clientes.telefone AS telefone, 
+            COALESCE(clientes.email, '') AS email, 
+            data_emissao, 
+            status,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota
+        FROM 
+            notas
+            JOIN clientes ON notas.cliente_id = clientes.id
+            JOIN nota_itens ON notas.id = nota_itens.nota_id
+        GROUP BY
+            notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
+        ORDER BY 
+            notas.id DESC
+    `;
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+};
+
+
 // Detalhar uma nota com cliente + itens
 exports.detalharNota = (req, res) => {
     const id = req.params.id;
@@ -147,6 +175,6 @@ exports.alterStatusNota = (req, res) => {
     db.query(updateNotaSQL, [status, notaId], (err) => {
         if (err) return res.status(500).json({ error: err });
 
-        res.json({message: "Status da nota atualizada com successo!"})
+        res.json({message: "Status da nota atualizada com sucesso!"})
     });
 };

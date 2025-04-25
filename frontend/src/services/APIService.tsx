@@ -13,6 +13,7 @@ interface Produto {
     nome: string;
     descricao: string;
     preco: string;
+    tipo: string
   }
 
 const API_URL = "http://localhost:3000";
@@ -63,7 +64,7 @@ export async function getProdutosID(id: number) {
 
 export async function postNewProduto(produto: Produto){
     produto.preco = produto.preco.replace(",", ".");
-    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : parseFloat(produto.preco), descricao : produto.descricao})
+    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : parseFloat(produto.preco), descricao : produto.descricao, tipo : produto.tipo})
     return response.data
 }
 
@@ -94,6 +95,11 @@ export const getNotas = async () => {
     const res = await axios.get(`${API_URL}/notas`);
     return res.data;
 };
+
+export async function getNotasItemID(id: number) {
+  const response = await axios.get(`${API_URL}/notasitem/${id}`);
+  return response.data;
+}
 
 export const postNota = async (nota: {
   cliente_id: number;

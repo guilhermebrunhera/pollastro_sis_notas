@@ -32,7 +32,7 @@ function Home() {
 
   const data = [
     { name: 'Clientes: ' + dadosHome?.countClientes, value: dadosHome?.countClientes, pathName: "Clientes" },
-    { name: 'Notas em Aberto: ' + dadosHome?.countNotasEmAberto, value: dadosHome?.countNotasEmAberto, pathName: "Notas" },
+    { name: 'Pedidos em Aberto: ' + dadosHome?.countNotasEmAberto, value: dadosHome?.countNotasEmAberto, pathName: "Notas" },
   ];
 
   const dataFinanceiro = [
@@ -46,9 +46,6 @@ function Home() {
 
   return (
     <div className='content-home' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', padding: '2rem' }}>
-      {/* <h1>Clientes Cadastrados: {dadosHome?.countClientes}</h1>
-      <h1>Produtos Cadastrados: {dadosHome?.countProdutos}</h1>
-      <h1>Notas em Produção: {dadosHome?.countNotasEmAberto}</h1> */}
       <div style={{height: 400}}>
         <ResponsiveContainer>
           <PieChart>

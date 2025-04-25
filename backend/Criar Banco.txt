@@ -39,3 +39,6 @@ CREATE TABLE nota_itens (
     FOREIGN KEY (nota_id) REFERENCES notas(id),
     FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
+
+ALTER TABLE produtos
+ADD COLUMN tipo ENUM('S', 'P') NOT NULL DEFAULT 'P';

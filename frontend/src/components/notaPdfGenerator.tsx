@@ -53,6 +53,16 @@ export async function gerarNotaPDF(nota: NotaData) {
           color: rgb(0, 0, 0),
         });
       };
+
+      const drawTextRight = (text: string, x: number, y: number, valorWidth: number) => {
+        page.drawText(text, {
+          x: offsetX + (x * scale) - valorWidth,
+          y: y * scale,
+          size: 13 * scale,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      };
   
       // Cabeçalho
       drawText(nota.data.split("/")[0], 78, 649, 12);
@@ -62,22 +72,47 @@ export async function gerarNotaPDF(nota: NotaData) {
       drawText(nota.email, 376, 651, 12);
       drawText(String(nota.nome), 85, 621);
       drawText(nota.cidade, 92, 592);
-      drawText(":" + nota.numero + " - Sistema", 330, 686, 20);
+
+      switch(nota.numero.length){
+        case 1: 
+          drawText(": 000" + nota.numero + " - Sistema", 330, 686, 20); break;
+        case 2: 
+          drawText(": 00" + nota.numero + " - Sistema", 330, 686, 20);break;
+        case 3: 
+          drawText(": 0" + nota.numero + " - Sistema", 330, 686, 20);break;
+        case 4: 
+          drawText(": " + nota.numero + " - Sistema", 330, 686, 20);break;
+        default:
+          
+      }
+
+      // drawText(": " + nota.numero + " - Sistema", 330, 686, 20);
   
       // Produtos
       let y = 526;
       let total = 0;
       nota.produtos.forEach((item) => {
+
+
+        const precoUnit = formatarReaisSemSimboloString(item.preco_unitario);
+        const precoTotal = formatarReaisSemSimboloString(item.preco_total);
+        const precoUnitWidth = font.widthOfTextAtSize(precoUnit, 13 * scale);
+        const precoTotalWidth = font.widthOfTextAtSize(precoTotal, 13 * scale);
+
+
         drawText(item.quantidade.toString(), 70, y);
         drawText(item.nome, 82, y);
-        drawText(formatarReaisSemSimboloString(item.preco_unitario), 450, y);
-        drawText(formatarReaisSemSimboloString(item.preco_total), 514, y);
+        drawTextRight(formatarReaisSemSimboloString(item.preco_unitario), 482, y, precoUnitWidth);
+        drawTextRight(formatarReaisSemSimboloString(item.preco_total), 554, y, precoTotalWidth);
+        
+
         y -= 18;
         total += parseFloat(item.preco_total);
       });
   
       // Total
-      drawText(formatarReaisSemSimboloString(String(total.toFixed(2))), 514, 72);
+      const precoTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(total.toFixed(2))), 13 * scale);
+      drawTextRight(formatarReaisSemSimboloString(String(total.toFixed(2))), 554, 72, precoTotalWidht);
     };
   
     // Duas cópias lado a lado com espaço proporcional

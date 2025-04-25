@@ -1,6 +1,7 @@
 import './styles.css'
 import { useState, useEffect } from 'react'
 import { deleteCliente, getClientes, postNewCliente, putCliente } from '../../services/APIService'
+import { removerAcentosTexto } from '../../components/utils/utils';
 
 interface Cliente {
   id?: number;
@@ -16,6 +17,7 @@ function Clientes() {
   const [listaClientes, setListaClientes] = useState<Cliente[]>([]);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [clienteEditandoId, setClienteEditandoId] = useState<number | null>(null);
+  const [termoFiltro, setTermoFiltro] = useState('');
 
   useEffect(() => {
     listarClientes();
@@ -27,6 +29,11 @@ function Clientes() {
       .catch(err => { console.error(err)});
   }
 
+  const clientesFiltrados = listaClientes.filter(cliente =>
+    removerAcentosTexto(cliente.nome).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
+    removerAcentosTexto(cliente.endereco).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase())
+  );
+
   const [cliente, setCliente] = useState<Cliente>({
     nome: "",
     email: "",
@@ -34,12 +41,29 @@ function Clientes() {
     endereco: ""
   });
 
+  function formatarTelefone(valor: string) {
+    // Remove tudo que não for número
+    const numeros = valor.replace(/\D/g, '');
   
+    // Aplica a máscara (99) 9 9999-9999
+    if (numeros.length <= 2) return `(${numeros}`;
+    if (numeros.length <= 3) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)}${numeros.slice(3)}`;
+    if (numeros.length <= 11) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)}${numeros.slice(3, 7)}-${numeros.slice(7)}`;
+    
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(3, 7)}-${numeros.slice(7, 11)}`;
+  }
+
   const handleChangeCliente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    const novoValor = name === 'telefone'
+    ? formatarTelefone(value)
+    : value;
+
     setCliente((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: novoValor,
     }));
   };
 
@@ -143,10 +167,10 @@ function Clientes() {
             <div>
               <label>Telefone:</label>
               <input
-                type="text"
-                name="telefone"
                 value={cliente.telefone}
                 onChange={handleChangeCliente}
+                name="telefone"
+                type='text'
                 required
               />
             </div>
@@ -167,9 +191,17 @@ function Clientes() {
         </div>
       :
       <div style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <h3>Filtro:</h3>
+        <input
+          type="text"
+          placeholder="Filtrar clientes..."
+          value={termoFiltro}
+          onChange={(e) => setTermoFiltro(e.target.value)}
+          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
+        />
         <h2>Lista de Clientes</h2>
         <ul>
-          {listaClientes.map((cliente) => (
+          {clientesFiltrados.map((cliente) => (
             <li key={cliente.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>
                 {cliente.nome} 

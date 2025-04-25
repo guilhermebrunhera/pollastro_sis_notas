@@ -15,7 +15,7 @@ exports.listarDadosHome = (req, res) => {
 
     const sqlValorNotasReceber = `
         SELECT 
-            SUM(produtos.preco * nota_itens.quantidade) AS precoEmProducao 
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS precoEmProducao 
         FROM 
             notas
             JOIN nota_itens ON notas.id = nota_itens.nota_id
@@ -26,7 +26,7 @@ exports.listarDadosHome = (req, res) => {
 
     const sqlValorRecebido = `
         SELECT 
-            SUM(produtos.preco * nota_itens.quantidade) AS precoFinalizada 
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS precoFinalizada 
         FROM 
             notas
             JOIN nota_itens ON notas.id = nota_itens.nota_id
