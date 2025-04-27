@@ -63,14 +63,14 @@ export async function getProdutosID(id: number) {
 }
 
 export async function postNewProduto(produto: Produto){
-    produto.preco = produto.preco.replace(",", ".");
-    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : parseFloat(produto.preco), descricao : produto.descricao, tipo : produto.tipo})
+    produto.preco = produto.preco.replace(".", ``).replace(",", ".");
+    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : produto.preco, descricao : produto.descricao, tipo : produto.tipo})
     return response.data
 }
 
 export async function putProduto(id: number, produto: Produto) {
     try {
-      produto.preco = String(parseFloat(produto.preco.replace(",", ".")))
+      produto.preco = produto.preco.replace(".", ``).replace(",", ".");
       const response = await axios.put(`${API_URL}/produtos/${id}`, produto);
       return response.data;
     } catch (error) {
