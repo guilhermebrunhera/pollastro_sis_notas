@@ -11,7 +11,11 @@ exports.listarNotas = (req, res) => {
             COALESCE(clientes.email, '') AS email, 
             data_emissao, 
             status,
-            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota
+            COALESCE(notas.observacoes, "") AS observacoes,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
+            notas.desconto as desconto,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
+            notas.desconto_obs
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
@@ -38,7 +42,12 @@ exports.listarNotasItem = (req, res) => {
             COALESCE(clientes.email, '') AS email, 
             data_emissao, 
             status,
-            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota
+            COALESCE(notas.observacoes, "") AS observacoes,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
+            notas.desconto as desconto,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
+            notas.desconto_obs
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
@@ -61,7 +70,7 @@ exports.detalharNota = (req, res) => {
 
     const notaQuery = `
         SELECT notas.id, clientes.nome AS cliente, clientes.telefone, clientes.email, clientes.endereco,
-               data_emissao, observacoes, status
+               data_emissao, COALESCE(observacoes, "") as observacoes, status
         FROM notas
         JOIN clientes ON notas.cliente_id = clientes.id
         WHERE notas.id = ?
@@ -89,14 +98,14 @@ exports.detalharNota = (req, res) => {
 
 // Criar nova nota com itens
 exports.criarNota = (req, res) => {
-    const { cliente_id, itens } = req.body;
+    const { cliente_id, itens, data_emissao, observacoes, desconto, status, desconto_obs } = req.body;
 
     // Configurar data e status default
-    const data_emissao = new Date().toISOString().split('T')[0];  // Pega a data no formato YYYY-MM-DD
-    const status = 'Producao';  // Valor padrão de status
+    // const data_emissao = new Date().toISOString().split('T')[0];  // Pega a data no formato YYYY-MM-DD
+    // const status = 'Producao';  // Valor padrão de status
 
-    const notaSQL = 'INSERT INTO notas (cliente_id, data_emissao, status) VALUES (?, ?, ?)';
-    db.query(notaSQL, [cliente_id, data_emissao, status], (err, result) => {
+    const notaSQL = 'INSERT INTO notas (cliente_id, data_emissao, status, observacoes, desconto, desconto_obs) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(notaSQL, [cliente_id, data_emissao, status, observacoes, desconto, desconto_obs], (err, result) => {
         if (err) return res.status(500).json({ error: err });
         const notaId = result.insertId;
 
@@ -113,15 +122,15 @@ exports.criarNota = (req, res) => {
 // Atualizar nota e seus itens (NOVO)
 exports.atualizarNota = (req, res) => {
     const notaId = req.params.id;
-    const { cliente_id, data_emissao, observacoes, status, itens } = req.body;
+    const { cliente_id, data_emissao, observacoes, status, itens, desconto, desconto_obs } = req.body;
 
     const updateNotaSQL = `
         UPDATE notas
-        SET cliente_id = ?, data_emissao = ?, observacoes = ?, status = ?
+        SET cliente_id = ?, data_emissao = ?, observacoes = ?, status = ?, desconto = ?, desconto_obs = ?
         WHERE id = ?
     `;
 
-    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, notaId], (err) => {
+    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, notaId, desconto, desconto_obs], (err) => {
         if (err) return res.status(500).json({ error: err });
 
         // Deletar os itens antigos

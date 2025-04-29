@@ -6,6 +6,7 @@ interface Cliente {
     email: string;
     telefone: string;
     endereco: string;
+    cpf_cnpj: string;
   }
 
 interface Produto {
@@ -26,7 +27,13 @@ export async function getClientes() {
 }
 
 export async function postNewCliente(cliente: Cliente){
-    const response = await axios.post(`${API_URL}/clientes`, {nome : cliente.nome, endereco : cliente.endereco, telefone : cliente.telefone, email : cliente.email})
+    const response = await axios.post(`${API_URL}/clientes`, {
+      nome : cliente.nome, 
+      endereco : cliente.endereco, 
+      telefone : cliente.telefone, 
+      email : cliente.email,
+      cpf_cnpj : cliente.cpf_cnpj
+    })
     return response.data
 }
 
@@ -106,6 +113,8 @@ export const postNota = async (nota: {
   data_emissao: string;
   observacoes: string;
   status: string;
+  desconto?: number;
+  desconto_obs?: string;
   itens: {
     produto_id: number;
     quantidade: number;
@@ -124,6 +133,8 @@ export const putNota = async (id: number, nota: {
   cliente_id: number;
   data_emissao: string;
   observacoes: string;
+  desconto?: number;
+  desconto_obs?: string;
   status: string;
   itens: {
     produto_id: number;

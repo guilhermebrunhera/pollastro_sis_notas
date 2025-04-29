@@ -9,6 +9,7 @@ interface Cliente {
   email: string;
   telefone: string;
   endereco: string;
+  cpf_cnpj: string;
 }
 
 function Clientes() {
@@ -38,7 +39,8 @@ function Clientes() {
     nome: "",
     email: "",
     telefone: "",
-    endereco: ""
+    endereco: "",
+    cpf_cnpj: ""
   });
 
   function formatarTelefone(valor: string) {
@@ -54,12 +56,25 @@ function Clientes() {
     return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(3, 7)}-${numeros.slice(7, 11)}`;
   }
 
+  function formatarCpfCnpj(valor: string) {
+    // Remove tudo que não for número
+    const numeros = valor.replace(/\D/g, '');
+  
+    if (numeros.length <= 3) return numeros;
+    if (numeros.length <= 6) return `${numeros.slice(0, 3)}.${numeros.slice(3)}`;
+    if (numeros.length <= 9) return `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(6)}`;
+    if (numeros.length <= 11) return `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(6, 9)}-${numeros.slice(9)}`;
+    if (numeros.length <= 14) return `${numeros.slice(0, 2)}.${numeros.slice(2, 5)}.${numeros.slice(5, 8)}/${numeros.slice(8, 12)}-${numeros.slice(12)}`;
+  
+    return `${numeros.slice(0, 2)}.${numeros.slice(2, 5)}.${numeros.slice(5, 8)}/${numeros.slice(8, 12)}-${numeros.slice(12, 14)}`;
+  }
+
   const handleChangeCliente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     const novoValor = name === 'telefone'
     ? formatarTelefone(value)
-    : value;
+    : name === 'cpf_cnpj' ? formatarCpfCnpj(value) : value;
 
     setCliente((prev) => ({
       ...prev,
@@ -81,7 +96,8 @@ function Clientes() {
             nome: "",
             email: "",
             telefone: "",
-            endereco: ""
+            endereco: "",
+            cpf_cnpj: ""
           });
         })
         .catch(err => console.error(err));
@@ -96,7 +112,8 @@ function Clientes() {
               nome: "",
               email: "",
               telefone: "",
-              endereco: ""
+              endereco: "",
+              cpf_cnpj: ""
             });
           } else {
             console.error("Erro ao cadastrar cliente:", data);
@@ -131,7 +148,8 @@ function Clientes() {
                 nome : "",
                 email: "",
                 endereco: "",
-                telefone: ""
+                telefone: "",
+                cpf_cnpj: ""
               }));
             }
           }
@@ -161,6 +179,15 @@ function Clientes() {
                 type="email"
                 name="email"
                 value={cliente.email}
+                onChange={handleChangeCliente}
+              />
+            </div>
+            <div>
+              <label>CPF/CNPJ: (Opcional)</label>
+              <input
+                type="text"
+                name="cpf_cnpj"
+                value={cliente.cpf_cnpj}
                 onChange={handleChangeCliente}
               />
             </div>

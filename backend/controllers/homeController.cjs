@@ -15,24 +15,36 @@ exports.listarDadosHome = (req, res) => {
 
     const sqlValorNotasReceber = `
         SELECT 
-            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS precoEmProducao 
-        FROM 
-            notas
-            JOIN nota_itens ON notas.id = nota_itens.nota_id
-            JOIN produtos ON produtos.id = nota_itens.produto_id
-        WHERE
-            notas.status = "Producao"
+            SUM(subtotal - COALESCE(desconto, 0)) AS precoEmProducao
+        FROM (
+            SELECT 
+                notas.id,
+                SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS subtotal,
+                notas.desconto
+            FROM 
+                notas
+                JOIN nota_itens ON notas.id = nota_itens.nota_id
+            WHERE
+                notas.status = "Producao"
+            GROUP BY notas.id
+        ) AS notas_sub
     `;
 
     const sqlValorRecebido = `
         SELECT 
-            SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS precoFinalizada 
-        FROM 
-            notas
-            JOIN nota_itens ON notas.id = nota_itens.nota_id
-            JOIN produtos ON produtos.id = nota_itens.produto_id
-        WHERE
-            notas.status = "Finalizada"
+            SUM(subtotal - COALESCE(desconto, 0)) AS precoFinalizada
+        FROM (
+            SELECT 
+                notas.id,
+                SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS subtotal,
+                notas.desconto
+            FROM 
+                notas
+                JOIN nota_itens ON notas.id = nota_itens.nota_id
+            WHERE
+                notas.status = "Finalizada"
+            GROUP BY notas.id
+        ) AS notas_sub
     `;
 
     db.query(sqlCountProdutos, (err, results) => {

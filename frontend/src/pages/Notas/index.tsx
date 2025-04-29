@@ -44,6 +44,9 @@ interface Nota {
   telefone?: string;
   email?: string;
   totalNota?: string;
+  totalNotaSemDesconto?: string;
+  desconto?: number;
+  desconto_obs?: string;
 }
 
 const formatarCentavosParaBRL = (centavos: number) => {
@@ -63,17 +66,21 @@ function Notas() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [notaEditandoId, setNotaEditandoId] = useState<number | null>(null);
   const [centavos, setCentavos] = useState(0);
+  const [desconto, setDesconto] = useState(0);
 
   const [nota, setNota] = useState<Nota>({
     cliente_id: 0,
     data_emissao: new Date().toISOString().split('T')[0], // Data do dia
     observacoes: '',
     status: 'Producao', // Status padrão
-    itens: []
+    itens: [],
+    desconto: 0
   });
 
   useEffect(() => {
     carregarDados();
+    setDesconto(0);
+    setCentavos(0);
   }, []);
 
   const carregarDados = async () => {
@@ -90,6 +97,20 @@ function Notas() {
       console.error(err);
     }
   };
+
+  const handleHasDesconto = (e : React.ChangeEvent<HTMLInputElement>) => {
+    const valorDesconto = e.target.value.replace(/\D/g, "");
+
+    const valorDescontoLimpo = valorDesconto.slice(0, 9);
+
+    const novoValor = parseInt(valorDescontoLimpo || "0", 10);
+
+    if (novoValor > 0){
+      nota.desconto = parseFloat(formatarCentavosParaBRL(novoValor).replace(".", "").replace(",", "."));
+    } else {
+      nota.desconto = 0;
+    }
+  }
 
   const handleItemChange = (index: number, field: keyof NotaItem, value: string | number) => {
     const novosItens = [...nota.itens];
@@ -150,7 +171,8 @@ function Notas() {
         data_emissao: new Date().toISOString().split('T')[0], // Data do dia
         observacoes: '',
         status: 'Producao', // Status padrão
-        itens: []
+        itens: [],
+        desconto: 0
       });
       setNovaNotaOpen(false);
       setModoEdicao(false);
@@ -169,6 +191,17 @@ function Notas() {
 
     const novoValor = parseInt(valorLimpo || "0", 10); // se vazio, volta pra 0
     setCentavos(novoValor);
+    
+  };
+
+  const handleChangeDesconto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const apenasNumeros = e.target.value.replace(/\D/g, ""); // remove tudo que não for número
+
+    // Limita o valor a no máximo 9 dígitos (R$ 99.999.999,99)
+    const valorLimpo = apenasNumeros.slice(0, 9);
+
+    const novoValor = parseInt(valorLimpo || "0", 10); // se vazio, volta pra 0
+    setDesconto(novoValor);
     
   };
   // const iniciarEdicao = (id: number) => {
@@ -210,6 +243,9 @@ function Notas() {
             telefone: String(nota.telefone) ,
             email: String(nota.email),
             endereco: String(nota.endereco),
+            observacao: String(nota.observacoes),
+            desconto: nota.desconto !== undefined? nota.desconto : 0,
+            desconto_obs: nota.desconto_obs !== undefined? nota.desconto_obs : "",
             produtos: data
           }
         )
@@ -223,12 +259,16 @@ function Notas() {
         <button className="default" onClick={() => {
           setNovaNotaOpen(!novaNotaOpen);
           setModoEdicao(false);
+          setCentavos(0);
+          setDesconto(0);
           setNota({
             cliente_id: 0,
             data_emissao: new Date().toISOString().split('T')[0], // Data do dia
             observacoes: '',
             status: 'Producao', // Status padrão
-            itens: []
+            itens: [],
+            desconto: 0,
+            desconto_obs: ""
           });
         }}>
           {novaNotaOpen ? 'Cancelar Pedido' : '+ Novo Pedido'}
@@ -378,6 +418,46 @@ function Notas() {
                 <button type="button" onClick={() => removerItem(index)}>❌</button>
               </div>
             ))}
+            {(() => {
+                const hasProduto = nota.itens.length > 0;
+                if(hasProduto){
+                  return(
+                    <>
+                      <br/>
+                      <hr></hr>
+                      <br/>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label>Desconto?</label>
+                        <input
+                          type="text"
+                          value={formatarCentavosParaBRL(desconto)}
+                          onChange={(e) => {
+                            handleChangeDesconto(e);
+                            handleHasDesconto(e);
+                          }}
+                          style={{ maxWidth: "200px", fontSize: "16px", padding: "4px" }}
+                        />
+                        {(() => {
+                          if(desconto !== undefined && desconto > 0)
+                            return(
+                              <>
+                              <label>Observação do Desconto</label>
+                              <input
+                                type="text"
+                                value={nota.desconto_obs}
+                                required
+                                onChange={(e) => setNota(prev => ({ ...prev, desconto_obs: e.target.value }))}
+                                style={{ fontSize: "16px", padding: "4px" }}
+                              />
+                              </>
+                            )
+                        })()}
+                      </div>
+                      
+                    </>
+                  )
+                }
+            })()}
             <button type="button" className='default-form' onClick={adicionarItem}>+ Produto</button>
 
             <button className="save" type="submit">{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
@@ -419,7 +499,7 @@ function Notas() {
                 </span>
                 <div className="acoes">
                   <button className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota)}>📑</button>
-                  <button className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button>
+                  {nota.status !== "Finalizada" ? <button className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>}
                 </div>
               </li>
             ))}

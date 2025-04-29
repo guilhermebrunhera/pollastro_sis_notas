@@ -18,6 +18,9 @@ interface NotaData {
   telefone: string;
   email: string;
   endereco: string;
+  observacao: string;
+  desconto: number;
+  desconto_obs: string;
   produtos: Produto[];
 }
 
@@ -30,6 +33,8 @@ export async function gerarNotaPDF(nota: NotaData) {
     const bgImageBytes = await fetch(backgroundImage).then(res => res.arrayBuffer());
     const bgImage = await pdfDoc.embedPng(bgImageBytes);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    
   
     const scale = 0.7; // escala de redução
     const imageWidth = 595 * scale;
@@ -54,12 +59,22 @@ export async function gerarNotaPDF(nota: NotaData) {
         });
       };
 
-      const drawTextRight = (text: string, x: number, y: number, valorWidth: number) => {
+      const drawTextRight = (text: string, x: number, y: number, valorWidth: number, bold = false) => {
         page.drawText(text, {
           x: offsetX + (x * scale) - valorWidth,
           y: y * scale,
           size: 13 * scale,
-          font,
+          font: bold ? fontBold : font,
+          color: rgb(0, 0, 0),
+        });
+      };
+
+      const drawTextBold = (text: string, x: number, y: number, size = 13) => {
+        page.drawText(text, {
+          x: offsetX + x * scale,
+          y: y * scale,
+          size: size * scale,
+          font: fontBold,
           color: rgb(0, 0, 0),
         });
       };
@@ -110,9 +125,33 @@ export async function gerarNotaPDF(nota: NotaData) {
         total += parseFloat(item.preco_total);
       });
   
-      // Total
-      const precoTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(total.toFixed(2))), 13 * scale);
-      drawTextRight(formatarReaisSemSimboloString(String(total.toFixed(2))), 554, 72, precoTotalWidht);
+      
+
+      if(nota.observacao.length > 0 && nota.observacao !== undefined && nota.observacao !== null){
+        drawText('OBS: ' + nota.observacao, 82, 106, 10)
+      }
+
+      if(nota.desconto > 0){
+        drawText('Desconto: ' + nota.desconto_obs, 82, 92, 10)
+
+        const precoSubTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(total.toFixed(2))), 13 * scale);
+        drawTextRight(formatarReaisSemSimboloString(String(total.toFixed(2))), 554, 108, precoSubTotalWidht);
+        drawTextBold("SUBTOTAL", 417, 106, 12)
+
+        const precoDescontoWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(nota.desconto)), 13 * scale);
+        drawTextRight("- " + formatarReaisSemSimboloString(String((nota.desconto))), 546, 90, precoDescontoWidht);
+        drawTextBold("DESCONTO", 415, 88, 12)
+
+        // Total
+        const precoTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String((total - nota.desconto).toFixed(2))), 13 * scale);
+        drawTextRight(formatarReaisSemSimboloString(String((total - nota.desconto).toFixed(2))), 554, 72, precoTotalWidht, true);
+        drawTextBold("TOTAL", 441, 72, 12)
+      } else {
+        // Total
+        const precoTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(total.toFixed(2))), 13 * scale);
+        drawTextRight(formatarReaisSemSimboloString(String(total.toFixed(2))), 554, 72, precoTotalWidht, true);
+        drawTextBold("TOTAL", 441, 72, 12)
+      }
     };
   
     // Duas cópias lado a lado com espaço proporcional

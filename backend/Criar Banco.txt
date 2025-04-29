@@ -42,3 +42,11 @@ CREATE TABLE nota_itens (
 
 ALTER TABLE produtos
 ADD COLUMN tipo ENUM('S', 'P') NOT NULL DEFAULT 'P';
+
+ALTER TABLE clientes
+ADD COLUMN cpf_cnpj VARCHAR(18) NULL;
+
+ALTER TABLE notas
+ADD COLUMN desconto DECIMAL(10,2) NULL;
+ALTER TABLE notas
+add column desconto_obs varchar(255) default "";

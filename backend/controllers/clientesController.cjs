@@ -20,10 +20,10 @@ exports.buscarClientePorId = (req, res) => {
 
 // Cadastrar novo cliente
 exports.cadastrarCliente = (req, res) => {
-    const { nome, telefone, email, endereco } = req.body;
+    const { nome, telefone, email, endereco, cpf_cnpj } = req.body;
     db.query(
-        'INSERT INTO clientes (nome, telefone, email, endereco) VALUES (?, ?, ?, ?)',
-        [nome, telefone, email, endereco],
+        'INSERT INTO clientes (nome, telefone, email, endereco, cpf_cnpj) VALUES (?, ?, ?, ?, ?)',
+        [nome, telefone, email, endereco, cpf_cnpj],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
             res.status(201).json({ id: result.insertId, message: 'Cliente cadastrado com sucesso' });
@@ -34,10 +34,10 @@ exports.cadastrarCliente = (req, res) => {
 // Editar cliente
 exports.editarCliente = (req, res) => {
     const id = req.params.id;
-    const { nome, telefone, email, endereco } = req.body;
+    const { nome, telefone, email, endereco, cpf_cnpj } = req.body;
     db.query(
-        'UPDATE clientes SET nome = ?, telefone = ?, email = ?, endereco = ? WHERE id = ?',
-        [nome, telefone, email, endereco, id],
+        'UPDATE clientes SET nome = ?, telefone = ?, email = ?, endereco = ?, cpf_cnpj = ? WHERE id = ?',
+        [nome, telefone, email, endereco, cpf_cnpj, id],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
             res.json({ message: 'Cliente atualizado com sucesso' });
