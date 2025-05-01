@@ -300,11 +300,13 @@ function Notas() {
             produtos: data
           }
         )
-        alterNotaImpressa(id).catch((e) => { console.error(e) }).then(() => {
-          setNotas(prev =>
-            prev.map(n => n.id === nota.id ? { ...n, nota_impressa: true } : n)
-          );
-        })
+        if (!download){
+          alterNotaImpressa(id).catch((e) => { console.error(e) }).then(() => {
+            setNotas(prev =>
+              prev.map(n => n.id === nota.id ? { ...n, nota_impressa: true } : n)
+            );
+          })
+        }
       })
       .catch(err => { console.error(err)})
   }
