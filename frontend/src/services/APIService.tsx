@@ -103,6 +103,11 @@ export const getNotas = async () => {
     return res.data;
 };
 
+export async function getNotaID(id: number) {
+  const response = await axios.get(`${API_URL}/notas/${id}`);
+  return response.data;
+}
+
 export async function getNotasItemID(id: number) {
   const response = await axios.get(`${API_URL}/notasitem/${id}`);
   return response.data;
@@ -117,7 +122,7 @@ export const postNota = async (nota: {
   desconto_obs?: string;
   itens: {
     produto_id: number;
-    quantidade: number;
+    quantidade: number | null;
     preco_unitario: number;
   }[];
 }) => {
@@ -138,7 +143,7 @@ export const putNota = async (id: number, nota: {
   status: string;
   itens: {
     produto_id: number;
-    quantidade: number;
+    quantidade: number | null;
     preco_unitario: number;
   }[];
 }) => {
@@ -148,6 +153,11 @@ export const putNota = async (id: number, nota: {
 
 export const alterStatusNota = async (id: number, status: string) => {
   const res = await axios.put(`${API_URL}/notasAlterStatus/${id}/${status}`, status);
+  return res.data;
+}
+
+export const alterNotaImpressa = async (id: number) => {
+  const res = await axios.put(`${API_URL}/notasAlterImpressa/${id}`);
   return res.data;
 }
 

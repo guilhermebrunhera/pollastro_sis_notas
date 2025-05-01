@@ -5,8 +5,10 @@ const controller = require('../controllers/notasController.cjs');
 // Rotas para notas de serviço
 router.get('/notas', controller.listarNotas);
 router.get('/notas/:id', controller.detalharNota);
+router.put('/notas/:id', controller.atualizarNota);
 router.post('/notas', controller.criarNota);
 router.delete('/notas/:id', controller.deletarNota);
 router.put('/notasAlterStatus/:id/:status', controller.alterStatusNota);
+router.put('/notasAlterImpressa/:id', controller.alterNotaImpressa);
 
 module.exports = router;

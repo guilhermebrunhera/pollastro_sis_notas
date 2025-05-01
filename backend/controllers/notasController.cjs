@@ -15,7 +15,8 @@ exports.listarNotas = (req, res) => {
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
             notas.desconto as desconto,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
-            notas.desconto_obs
+            notas.desconto_obs,
+            notas.nota_impressa
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
@@ -47,7 +48,8 @@ exports.listarNotasItem = (req, res) => {
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
             notas.desconto as desconto,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
-            notas.desconto_obs
+            notas.desconto_obs,
+            notas.nota_impressa
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
@@ -69,8 +71,8 @@ exports.detalharNota = (req, res) => {
     const id = req.params.id;
 
     const notaQuery = `
-        SELECT notas.id, clientes.nome AS cliente, clientes.telefone, clientes.email, clientes.endereco,
-               data_emissao, COALESCE(observacoes, "") as observacoes, status
+        SELECT notas.id, clientes.nome AS cliente, clientes.telefone, clientes.email, clientes.endereco, notas.cliente_id,
+               data_emissao, COALESCE(observacoes, "") as observacoes, status, notas.nota_impressa, notas.desconto, notas.desconto_obs
         FROM notas
         JOIN clientes ON notas.cliente_id = clientes.id
         WHERE notas.id = ?
@@ -130,7 +132,7 @@ exports.atualizarNota = (req, res) => {
         WHERE id = ?
     `;
 
-    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, notaId, desconto, desconto_obs], (err) => {
+    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, desconto, desconto_obs, notaId], (err) => {
         if (err) return res.status(500).json({ error: err });
 
         // Deletar os itens antigos
@@ -185,5 +187,21 @@ exports.alterStatusNota = (req, res) => {
         if (err) return res.status(500).json({ error: err });
 
         res.json({message: "Status da nota atualizada com sucesso!"})
+    });
+};
+
+exports.alterNotaImpressa = (req, res) => {
+    const notaId = req.params.id;
+
+    const updateNotaSQL = `
+        UPDATE notas
+        SET nota_impressa = 1
+        WHERE id = ?
+    `;
+
+    db.query(updateNotaSQL, [notaId], (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        res.json({message: "Nota Impressa!"})
     });
 };

@@ -21,6 +21,7 @@ interface NotaData {
   observacao: string;
   desconto: number;
   desconto_obs: string;
+  download: boolean,
   produtos: Produto[];
 }
 
@@ -161,8 +162,10 @@ export async function gerarNotaPDF(nota: NotaData) {
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const pdfUrl = URL.createObjectURL(blob);
-    window.confirm("Deseja baixar este arquivo no seu computador? \n\nClique em 'Cancelar' para somente abrir o arquivo.")
-      ? saveAs(blob, `Nota de Serviço - ${nota.nome} ${nota.data}.pdf`)
-      : null;
-    window.open(pdfUrl, '_blank');
+    if(nota.download){
+      saveAs(blob, `Nota de Serviço - ${nota.nome} ${nota.data}.pdf`)
+    } else {
+      window.open(pdfUrl, '_blank');
+    }
+    
   }
