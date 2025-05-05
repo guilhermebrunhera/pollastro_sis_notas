@@ -114,9 +114,10 @@ export async function gerarNotaPDF(nota: NotaData) {
         const precoTotal = formatarReaisSemSimboloString(item.preco_total);
         const precoUnitWidth = font.widthOfTextAtSize(precoUnit, 13 * scale);
         const precoTotalWidth = font.widthOfTextAtSize(precoTotal, 13 * scale);
+        const qtdWidth = font.widthOfTextAtSize(item.quantidade.toString(), 13 * scale);
 
 
-        drawText(item.quantidade.toString(), 70, y);
+        drawTextRight(item.quantidade.toString(), 80, y, qtdWidth);
         drawText(item.nome, 82, y);
         drawTextRight(formatarReaisSemSimboloString(item.preco_unitario), 482, y, precoUnitWidth);
         drawTextRight(formatarReaisSemSimboloString(item.preco_total), 554, y, precoTotalWidth);

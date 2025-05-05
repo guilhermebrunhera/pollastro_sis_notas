@@ -54,3 +54,13 @@ add column desconto_obs varchar(255) default "";
 
 ALTER TABLE notas
 ADD COLUMN nota_impressa BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE notas 
+MODIFY COLUMN status ENUM('Producao', 'Cancelada', 'Finalizada', 'Paga') DEFAULT 'Producao';
+
+CREATE TABLE notas_imagens (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  nota_id INT NOT NULL,
+  caminho_imagem VARCHAR(255) NOT NULL,
+  FOREIGN KEY (nota_id) REFERENCES notas(id) ON DELETE CASCADE
+);

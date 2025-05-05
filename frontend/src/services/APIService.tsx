@@ -161,6 +161,20 @@ export const alterNotaImpressa = async (id: number) => {
   return res.data;
 }
 
+export const salvarImagensNota = async (id: number, imagens : FormData) => {
+  const res = await axios.post(`${API_URL}/notas/${id}/imagens`, imagens);
+  return res.data;
+}
+
+export const getImagensNota = async (id: number) => {
+  const res = await axios.get(`${API_URL}/notas/${id}/imagens`);
+  return res.data;
+}
+
+export const deleteImageNota = async (id: number) => {
+  await axios.delete(`${API_URL}/notas/${id}/imagens`);
+};
+
 // ____________________________________________________ HOME ______________________________________//
 
 export const getDadosHome = async () => {

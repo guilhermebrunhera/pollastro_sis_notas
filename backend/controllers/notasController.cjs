@@ -1,4 +1,7 @@
 const db = require('../db.cjs');
+const upload = require('../utils/uploadImages.cjs');
+const path = require('path');
+const fs = require('fs');
 
 // Listar todas as notas (sem itens)
 exports.listarNotas = (req, res) => {
@@ -205,3 +208,57 @@ exports.alterNotaImpressa = (req, res) => {
         res.json({message: "Nota Impressa!"})
     });
 };
+
+exports.uploadImagensNota = [
+    upload.array('imagens', 15), // aceita até 15 imagens de uma vez
+    (req, res) => {
+      const notaId = req.params.id;
+  
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+      }
+  
+      // Monta os valores para inserir no banco
+      const valores = req.files.map(file => [notaId, `uploads/` + file.filename]);
+  
+      const sql = 'INSERT INTO notas_imagens (nota_id, caminho_imagem) VALUES ?';
+      db.query(sql, [valores], (err) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json({ message: 'Imagens salvas com sucesso!' });
+      });
+    }
+  ];
+
+exports.getImagensNota = [
+    (req, res) => {
+      const notaId = req.params.id;
+  
+      const sql = 'SELECT * FROM notas_imagens WHERE nota_id = ?';
+      db.query(sql, [notaId], (err, data) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(data);
+      });
+    }
+  ];
+
+  exports.deleteImagensNota = [
+    (req, res) => {
+      const idImage = req.params.id;
+  
+      db.query('SELECT caminho_imagem FROM notas_imagens WHERE id = ?', [idImage], (err, data) => {
+        if (err) return res.status(500).json({ error: err });
+        const caminhoFisico = path.join(__dirname, '..', data[0].caminho_imagem);
+
+        fs.unlink(caminhoFisico, (err) => {
+            if(err){
+                return res.json({message: 'erro ao excluir a foto fisica do sistema'})
+            }
+            const sql = 'DELETE FROM notas_imagens WHERE id = ?';
+            db.query(sql, [idImage], (err, data) => {
+                if (err) return res.status(500).json({ error: err });
+                res.json(data);
+            });
+        })
+      })
+    }
+  ];

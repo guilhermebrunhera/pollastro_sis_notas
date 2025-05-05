@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
 import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
 import { gerarPedidoPDF } from '../../components/pedidoPdfGenerator';
+import ModalUploadImagens from '../../components/utils/modalImagens';
 
 interface Cliente {
   id: number;
@@ -49,7 +50,7 @@ interface Nota {
   cliente_id: number;
   data_emissao: string;
   observacoes: string;
-  status: 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
+  status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
   itens: NotaItem[];
   cliente?: string;
   endereco?: string;
@@ -81,12 +82,13 @@ function Notas() {
   const [centavos, setCentavos] = useState(0);
   const [desconto, setDesconto] = useState(0);
   const buttonSubmitRef = useRef<HTMLButtonElement>(null);
+  const selectClienteRef = useRef<any>(null);
 
   const [nota, setNota] = useState<Nota>({
     cliente_id: 0,
     data_emissao: new Date().toISOString().split('T')[0], // Data do dia
     observacoes: '',
-    status: 'Producao', // Status padrão
+    status: '', // Status padrão
     itens: [],
     desconto: 0
   });
@@ -96,6 +98,13 @@ function Notas() {
     setDesconto(0);
     setCentavos(0);
   }, []);
+
+  useEffect(() => {
+    if(novaNotaOpen && !modoEdicao){
+      selectClienteRef.current?.focus()
+      setNota(prev => ({...prev, status: ''}))
+    }
+  }, [novaNotaOpen])
 
   const carregarDados = async () => {
     try {
@@ -167,7 +176,6 @@ function Notas() {
   const handleSubmitNota = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log(nota)
     try {
       // Certifique-se de que cliente_id está correto antes de enviar
       if (nota.cliente_id === 0) {
@@ -264,7 +272,10 @@ function Notas() {
         hasValorZerado ? 
           alert("Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!")
         :
-          buttonSubmitRef.current?.click()
+          nota.status === '' ?
+            alert("Selecione um STATUS para a nota")
+          :
+            buttonSubmitRef.current?.click()
     } else {
       alert("Selecione produtos para adicionar ao pedido!")
     }
@@ -361,6 +372,7 @@ function Notas() {
           <form onSubmit={handleSubmitNota}>
             <label>Cliente:</label>
             <Select
+              ref={selectClienteRef}
               name="cliente_id"  // Certificando que o name seja 'cliente_id'
               options={clientes.map(c => ({ value: c.id, label: c.nome }))}
               value={clientes.map(c => ({ value: c.id, label: c.nome })).find(op => op.value === nota.cliente_id)}
@@ -404,8 +416,9 @@ function Notas() {
             <label>Status:</label>
             <select
               value={nota.status}
-              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' }))}
+              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' }))}
             >
+              <option value="">-- Selecione --</option>
               <option value="Producao">Em Produçao</option>
               <option value="Cancelada">Cancelado</option>
               <option value="Finalizada">Finalizado</option>
@@ -490,7 +503,7 @@ function Notas() {
                         type="text"
                         placeholder="Preço (Produto)"
                         value={
-                          formatarReaisSemSimboloFloat(item.preco_unitario * (item.quantidade || 0))
+                          formatarReaisSemSimboloFloat(item.quantidade === 0 ? 0 : item.preco_unitario)
                         }
                         onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
                         disabled={true}
@@ -586,6 +599,7 @@ function Notas() {
                   {nota.status === "Producao" ? <button title='Imprimir Serviço' className='botao-icone' onClick={() => carregarPedidoParaPDF(nota.id!, nota)}>📋</button> : <></>}
                   <button title='Imprimir Pedido' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
                   <button title='Download Pedido' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
+                  <ModalUploadImagens notaId={nota.id}/>
                   {!nota.nota_impressa ? <button title='Editar Pedido' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
                   {nota.status !== "Finalizada" && nota.status !== "Paga" && !nota.nota_impressa ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>}
                 </div>
