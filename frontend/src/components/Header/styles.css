@@ -1,4 +1,4 @@
-header {
+/* header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -8,7 +8,22 @@ header {
 
     padding: 16px;
     background-color: black;
-}
+} */
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #333; /* Ou a cor que você usa no seu header */
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
 
 header div {
     display: flex;

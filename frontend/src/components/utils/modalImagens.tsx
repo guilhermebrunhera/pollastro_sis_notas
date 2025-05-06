@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { deleteImageNota, getImagensNota, salvarImagensNota } from '../../services/APIService';
+import Toast from '../Toasts/toasts';
 
 interface notaImagens {
     id: number,
@@ -15,6 +16,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
     const [hasImage, setHasImage] = useState(false)
     const [openUploadImage, setOpenUploadImage] = useState(false)
     const [imagensPreviewSalvas, setImagensPreviewSalvas] = useState<notaImagens[]>([])
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'warning' | '' }>({message: "", type: ""});
 
     const checkImages = async () => {
         try {
@@ -65,7 +67,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
     }
 
     const handleUpload = async () => {
-        if (imagensArquivos.length === 0) return alert('Selecione ao menos uma imagem!');
+        if (imagensArquivos.length === 0) return setToast({message: "Selecione ao menos uma imagem!", type: "warning"});
 
         try {
         //   setCarregando(true);
@@ -74,13 +76,14 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
 
         salvarImagensNota(notaId === undefined ? 0 : notaId, formData).then(res => {
             res.data;
-            setShowModal(false);
+            // setShowModal(false);
             setImagensArquivos([]);
             setImagensPreview([]);
+            checkImages();
+            setToast({message: "Imagens salvas", type: "success"})
         })
         } catch (error) {
-        console.error('Erro ao enviar imagens:', error);
-        alert('Erro ao enviar imagens!');
+            setToast({message: "Erro ao salvar imagens: " + error, type: "error"})
         } finally {
         //   setCarregando(false);
         }
@@ -240,8 +243,15 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
                     </>
                 )}
                 </div>
+                <Toast
+                message={toast.message}
+                type={toast?.type}
+                onClose={() => setToast({message: '', type: ''})}
+                />
             </div>
+            
         )}
+        
         </div>
     );
 }

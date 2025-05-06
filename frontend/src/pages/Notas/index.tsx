@@ -18,6 +18,7 @@ import { gerarNotaPDF } from '../../components/notaPdfGenerator'
 import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
 import { gerarPedidoPDF } from '../../components/pedidoPdfGenerator';
 import ModalUploadImagens from '../../components/utils/modalImagens';
+import Toast from '../../components/Toasts/toasts';
 
 interface Cliente {
   id: number;
@@ -83,6 +84,7 @@ function Notas() {
   const [desconto, setDesconto] = useState(0);
   const buttonSubmitRef = useRef<HTMLButtonElement>(null);
   const selectClienteRef = useRef<any>(null);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'warning' } | null>(null);
 
   const [nota, setNota] = useState<Nota>({
     cliente_id: 0,
@@ -179,7 +181,7 @@ function Notas() {
     try {
       // Certifique-se de que cliente_id está correto antes de enviar
       if (nota.cliente_id === 0) {
-        alert("Por favor, selecione um cliente.");
+        setToast({ message: "Por favor, selecione um cliente.", type: "warning"})
         return;
       }
 
@@ -201,7 +203,7 @@ function Notas() {
       setNotaEditandoId(null);
       carregarDados();
     } catch (err) {
-      console.error(err);
+      setToast({ message: String(err), type: "error"})
     }
   };
 
@@ -267,17 +269,18 @@ function Notas() {
       })
 
       hasQtdNULL ?
-        alert("Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!")
+        setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "warning"})
+        
       :
         hasValorZerado ? 
-          alert("Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!")
+        setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "warning"})
         :
           nota.status === '' ?
-            alert("Selecione um STATUS para a nota")
+          setToast({ message: "Selecione um STATUS para o pedido!", type: "warning"})
           :
             buttonSubmitRef.current?.click()
     } else {
-      alert("Selecione produtos para adicionar ao pedido!")
+      setToast({ message: "Adicione produtos para o Pedido!", type: "warning"})
     }
   }
 
@@ -580,11 +583,12 @@ function Notas() {
                       const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
                       try {
                         await alterStatusNota(nota.id!, novoStatus);
+                        setToast({message: "Status da nota atualizado com Sucesso!", type: "success"})
                         setNotas(prev =>
                           prev.map(n => n.id === nota.id ? { ...n, status: novoStatus } : n)
                         );
                       } catch (err) {
-                        console.error('Erro ao atualizar status:', err);
+                        setToast({message: "Erro ao atualizar status: " + err, type: "error"})
                       }
                     }}
                   >
@@ -607,6 +611,13 @@ function Notas() {
             ))}
           </ul>
         </div>
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
