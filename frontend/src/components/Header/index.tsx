@@ -32,6 +32,11 @@ function Header() {
                     cursor: localAtivo.pathname === "/Notas" ? "default" : "pointer",
                     textDecoration: localAtivo.pathname === "/Notas" ? "none" : ""
                 })} to='/Notas'>Pedidos</NavLink>
+                <NavLink style={() => ({
+                    color: localAtivo.pathname === "/Acompanhamentos" ? "gray" : "white",
+                    cursor: localAtivo.pathname === "/Acompanhamentos" ? "default" : "pointer",
+                    textDecoration: localAtivo.pathname === "/Acompanhamentos" ? "none" : ""
+                })} to='/Acompanhamentos'>Acompanhamentos</NavLink>
             </div>
         </header>
     )

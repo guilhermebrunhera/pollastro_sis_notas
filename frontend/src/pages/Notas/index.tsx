@@ -15,7 +15,7 @@ import {
 } from '../../services/APIService';
 import { format } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
-import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
+import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString, removerAcentosTexto } from '../../components/utils/utils';
 import { gerarPedidoPDF } from '../../components/pedidoPdfGenerator';
 import ModalUploadImagens from '../../components/utils/modalImagens';
 import Toast from '../../components/Toasts/toasts';
@@ -84,7 +84,8 @@ function Notas() {
   const [desconto, setDesconto] = useState(0);
   const buttonSubmitRef = useRef<HTMLButtonElement>(null);
   const selectClienteRef = useRef<any>(null);
-  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'warning' } | null>(null);
+  const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
+  const [termoFiltro, setTermoFiltro] = useState('');
 
   const [nota, setNota] = useState<Nota>({
     cliente_id: 0,
@@ -94,6 +95,13 @@ function Notas() {
     itens: [],
     desconto: 0
   });
+
+  const clientesFiltrados = notas.filter(notas =>
+      removerAcentosTexto(String(notas.cliente)).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
+      removerAcentosTexto(String(notas.id)).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
+      removerAcentosTexto(format(notas.data_emissao, "ddMMyyyy")).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
+      removerAcentosTexto(format(notas.data_emissao, "dd/MM/yyyy")).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase())
+  );
 
   useEffect(() => {
     carregarDados();
@@ -179,12 +187,6 @@ function Notas() {
     e.preventDefault();
 
     try {
-      // Certifique-se de que cliente_id está correto antes de enviar
-      if (nota.cliente_id === 0) {
-        setToast({ message: "Por favor, selecione um cliente.", type: "warning"})
-        return;
-      }
-
       if (modoEdicao && notaEditandoId !== null) {
         await putNota(notaEditandoId, nota);
       } else {
@@ -203,7 +205,7 @@ function Notas() {
       setNotaEditandoId(null);
       carregarDados();
     } catch (err) {
-      setToast({ message: String(err), type: "error"})
+      setToast({ message: String(err), type: "Erro"})
     }
   };
 
@@ -258,6 +260,11 @@ function Notas() {
     let hasQtdNULL = false;
     let hasValorZerado = false;
 
+    if(nota.cliente_id === 0){
+      setToast({ message: "Selecione um Cliente para o pedido!", type: "Alerta"})
+      return;
+    }
+
     if(nota.itens.length > 0){
       nota.itens.map(item => {
         if(item.quantidade === null || item.quantidade === 0){
@@ -268,19 +275,36 @@ function Notas() {
         }
       })
 
-      hasQtdNULL ?
-        setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "warning"})
+      // hasQtdNULL ?
+      //   setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "Alerta"})
         
-      :
-        hasValorZerado ? 
-        setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "warning"})
-        :
-          nota.status === '' ?
-          setToast({ message: "Selecione um STATUS para o pedido!", type: "warning"})
-          :
+      // :
+      //   hasValorZerado ? 
+      //   setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "Alerta"})
+      //   :
+      //     nota.status === '' ?
+      //     setToast({ message: "Selecione um STATUS para o pedido!", type: "Alerta"})
+      //     :
+      //       buttonSubmitRef.current?.click()
+      if(hasQtdNULL){
+        setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "Alerta"})
+        return;
+      }else{
+        if(hasValorZerado){
+          setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "Alerta"})
+          return;
+        }else{
+          if(nota.status === ""){
+            setToast({ message: "Selecione um STATUS para o pedido!", type: "Alerta"})
+            return;
+          }else{
             buttonSubmitRef.current?.click()
+          }
+        }
+      }
     } else {
-      setToast({ message: "Adicione produtos para o Pedido!", type: "warning"})
+      setToast({ message: "Adicione produtos para o Pedido!", type: "Alerta"})
+      return;
     }
   }
 
@@ -561,20 +585,29 @@ function Notas() {
 
             <button className="save" type='button' onClick={handleHasQtdProdutos}>{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
             <button className="save" hidden ref={buttonSubmitRef} type="submit"></button>
+            <br />
           </form>
         </div>
       ) : (
         <div style={{ maxWidth: '80%', margin: '0 auto' }}>
+          <h3>Filtro:</h3>
+          <input
+            type="text"
+            placeholder="Filtrar clientes, nº nota, data..."
+            value={termoFiltro}
+            onChange={(e) => setTermoFiltro(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
+          /><br />
           <h2>Pedidos:</h2>
           <ul>
-            {notas.map(nota => (
+            {clientesFiltrados.map(nota => (
               <li key={nota.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{maxWidth: "8%"}}>Pedido {nota.id}</span>
                 <span style={{width: "32%"}}>{nota.cliente}</span>
                 <span style={{width: "10%"}}>{format(nota.data_emissao, "dd/MM/yyyy")}</span>
                 <span>{nota.totalNota ? "R$ " + formatarReaisSemSimboloString(nota.totalNota) : ""}</span>
                 <span style={{width: "5%"}}>
-                  {nota.status !== "Producao" ? 
+                  {nota.status === "Paga" ? 
                     nota.status
                   :
                   <select
@@ -583,12 +616,12 @@ function Notas() {
                       const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
                       try {
                         await alterStatusNota(nota.id!, novoStatus);
-                        setToast({message: "Status da nota atualizado com Sucesso!", type: "success"})
+                        setToast({message: "Status da nota atualizado com Sucesso!", type: "Sucesso"})
                         setNotas(prev =>
                           prev.map(n => n.id === nota.id ? { ...n, status: novoStatus } : n)
                         );
                       } catch (err) {
-                        setToast({message: "Erro ao atualizar status: " + err, type: "error"})
+                        setToast({message: "Erro ao atualizar status: " + err, type: "Erro"})
                       }
                     }}
                   >
@@ -601,10 +634,10 @@ function Notas() {
                 </span>
                 <div className="acoes" style={{width: "20%"}}>
                   {nota.status === "Producao" ? <button title='Imprimir Serviço' className='botao-icone' onClick={() => carregarPedidoParaPDF(nota.id!, nota)}>📋</button> : <></>}
-                  <button title='Imprimir Pedido' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
-                  <button title='Download Pedido' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
+                  <button title='Imprimir' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
+                  <button title='Download' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
                   <ModalUploadImagens notaId={nota.id}/>
-                  {!nota.nota_impressa ? <button title='Editar Pedido' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
+                  {!nota.nota_impressa ? <button title='Editar' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
                   {nota.status !== "Finalizada" && nota.status !== "Paga" && !nota.nota_impressa ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>}
                 </div>
               </li>

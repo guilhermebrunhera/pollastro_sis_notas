@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Clientes from './pages/Clientes'
 import Produtos from './pages/Produtos'
 import Notas from './pages/Notas'
+import Acompanhamentos from './pages/Acompanhamentos'
 
 function MainRoutes() {
     return(
@@ -11,6 +12,7 @@ function MainRoutes() {
             <Route path='/Clientes' element={<Clientes />} />
             <Route path='/Produtos' element={<Produtos />} />
             <Route path='/Notas' element={<Notas />} />
+            <Route path='/Acompanhamentos' element={<Acompanhamentos />} />
         </Routes>
     )
 }

@@ -2,6 +2,7 @@ import './styles.css'
 import { useState, useEffect } from 'react'
 import { deleteCliente, getClientes, postNewCliente, putCliente } from '../../services/APIService'
 import { removerAcentosTexto } from '../../components/utils/utils';
+import Toast from '../../components/Toasts/toasts';
 
 interface Cliente {
   id?: number;
@@ -19,6 +20,7 @@ function Clientes() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [clienteEditandoId, setClienteEditandoId] = useState<number | null>(null);
   const [termoFiltro, setTermoFiltro] = useState('');
+  const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
 
   useEffect(() => {
     listarClientes();
@@ -88,6 +90,7 @@ function Clientes() {
     if (modoEdicao && clienteEditandoId !== null) {
       putCliente(clienteEditandoId, cliente)
         .then(() => {
+          setToast({message: "Cliente editado!", type: "Sucesso"})
           listarClientes();
           setModoEdicao(false);
           setClienteEditandoId(null);
@@ -100,12 +103,13 @@ function Clientes() {
             cpf_cnpj: ""
           });
         })
-        .catch(err => console.error(err));
+        .catch(err => setToast({message: "Erro ao editar Cliente: " + err, type: "Erro"}));
     } else {
       // POST novo cliente
       postNewCliente(cliente)
         .then(data => {
           if (data) {
+            setToast({message: "Cliente adicionado!", type: "Sucesso"})
             listarClientes();
             setNovoClienteOpen(false);
             setCliente({
@@ -116,7 +120,7 @@ function Clientes() {
               cpf_cnpj: ""
             });
           } else {
-            console.error("Erro ao cadastrar cliente:", data);
+            setToast({message: "Erro ao adicionar Cliente" + data, type: "Erro"})
           }
         })
         .catch(err => console.error(err));
@@ -128,10 +132,11 @@ function Clientes() {
       deleteCliente(id)
         .then(() => {
           // Atualiza a lista sem recarregar a página
+          setToast({message: "Cliente excluido!", type: "Sucesso"})
           setListaClientes(listaClientes.filter(cliente => cliente.id !== id));
         })
         .catch(err => {
-          console.error("Erro ao excluir cliente:", err);
+          setToast({message: "Erro ao excluir cliente: " + err, type: "Erro"})
         });
     }
   };
@@ -258,6 +263,13 @@ function Clientes() {
         </ul>
       </div>
       }
+      {toast && (
+              <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(null)}
+              />
+            )}
     </div>
   );
 }

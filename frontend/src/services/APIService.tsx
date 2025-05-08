@@ -17,6 +17,15 @@ interface Produto {
     tipo: string
   }
 
+  interface Acompanhamentos {
+    id: number;
+    produto_id: number;
+    local: string;
+    data_saida: string;
+    quantidade: number;
+    produto: Produto
+  }
+
 const API_URL = "http://localhost:3000";
 
 // ____________________________________________________ CLIENTES ______________________________________//
@@ -181,3 +190,40 @@ export const getDadosHome = async () => {
   const res = await axios.get(`${API_URL}/`);
   return res.data;
 };
+
+// __________________________________________________  ACOMPANHAMENTOS ______________________________//
+
+export async function getAcompanhamentos() {
+  const response = await axios.get(`${API_URL}/acompanhamentos`);
+  return response.data;
+}
+
+export async function getAcompanhamentosPorID(id: number) {
+  const response = await axios.get(`${API_URL}/acompanhamentos/${id}`);
+  return response.data;
+}
+
+export async function postNewAcompanhamento(acompanhamento: Acompanhamentos){
+  const response = await axios.post(`${API_URL}/acompanhamentos`, acompanhamento)
+  return response.data
+}
+
+// export async function putAcompanhamento(id: number, acompanhamento: Acompanhamentos) {
+//   try {
+//     const response = await axios.put(`${API_URL}/acompanhamentos/${id}`, acompanhamento);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Erro ao editar acompanhamento:", error);
+//     throw error;
+//   }
+// }
+
+export async function deleteAcompanhamento(id: number) {
+  try {
+    const response = await axios.delete(`${API_URL}/acompanhamentos/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao excluir acompanhamento:", error);
+    throw error;
+  }
+}

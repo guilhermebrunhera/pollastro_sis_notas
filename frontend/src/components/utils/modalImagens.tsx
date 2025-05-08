@@ -16,7 +16,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
     const [hasImage, setHasImage] = useState(false)
     const [openUploadImage, setOpenUploadImage] = useState(false)
     const [imagensPreviewSalvas, setImagensPreviewSalvas] = useState<notaImagens[]>([])
-    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'warning' | '' }>({message: "", type: ""});
+    const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' }>({message: "", type: ""});
 
     const checkImages = async () => {
         try {
@@ -67,7 +67,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
     }
 
     const handleUpload = async () => {
-        if (imagensArquivos.length === 0) return setToast({message: "Selecione ao menos uma imagem!", type: "warning"});
+        if (imagensArquivos.length === 0) return setToast({message: "Selecione ao menos uma imagem!", type: "Alerta"});
 
         try {
         //   setCarregando(true);
@@ -80,10 +80,10 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
             setImagensArquivos([]);
             setImagensPreview([]);
             checkImages();
-            setToast({message: "Imagens salvas", type: "success"})
+            setToast({message: "Imagens salvas", type: "Sucesso"})
         })
         } catch (error) {
-            setToast({message: "Erro ao salvar imagens: " + error, type: "error"})
+            setToast({message: "Erro ao salvar imagens: " + error, type: "Erro"})
         } finally {
         //   setCarregando(false);
         }
@@ -95,6 +95,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
         <button
             onClick={() => setShowModal(true)}
             className="botao-icone"
+            title='Fotos'
         >
             📷
         </button>

@@ -3,21 +3,22 @@ import './style.css'
 
 type ToastProps = {
   message: string;
-  type?: 'success' | 'error' | 'warning' | '';
+  type?: 'Sucesso' | 'Erro' | 'Alerta' | '';
   onClose: () => void;
 };
 
-function Toast({ message, type = 'success', onClose }: ToastProps) {
+function Toast({ message, type = 'Sucesso', onClose }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 3000); // Toast some após 3 segundos
+    }, 4000); // Toast some após 4 segundos
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
     <div className={`toast ${type}`}>
-      {message}
+      <h5>{type}: </h5>
+      <h4>{message}</h4>
     </div>
   );
 }

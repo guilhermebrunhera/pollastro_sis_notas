@@ -64,3 +64,12 @@ CREATE TABLE notas_imagens (
   caminho_imagem VARCHAR(255) NOT NULL,
   FOREIGN KEY (nota_id) REFERENCES notas(id) ON DELETE CASCADE
 );
+
+CREATE TABLE produtos_acompanhamento(
+	id int auto_increment primary key,
+    produto_id int not null,
+    quantidade int not null,
+    local varchar(256),
+    data_saida datetime default current_timestamp,
+    foreign key (produto_id) references produtos(id)
+)

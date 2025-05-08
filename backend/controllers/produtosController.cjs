@@ -2,7 +2,7 @@ const db = require('../db.cjs');
 
 // Listar todos os produtos
 exports.listarProdutos = (req, res) => {
-    db.query('SELECT * FROM produtos ORDER BY nome ASC', (err, results) => {
+    db.query('SELECT * FROM produtos ORDER BY CONCAT(trim(nome),trim(descricao)) ASC', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });

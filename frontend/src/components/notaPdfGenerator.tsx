@@ -79,6 +79,7 @@ export async function gerarNotaPDF(nota: NotaData) {
           color: rgb(0, 0, 0),
         });
       };
+      
   
       // Cabeçalho
       drawText(nota.data.split("/")[0], 78, 649, 12);
@@ -156,9 +157,13 @@ export async function gerarNotaPDF(nota: NotaData) {
       }
     };
   
-    // Duas cópias lado a lado com espaço proporcional
-    drawNota(15); // primeira (esquerda)
-    drawNota(428); // segunda (direita), considerando 595*0.7 + um espaçamento de ~10px
+    if(nota.download){
+      drawNota(15);
+    } else {
+      // Duas cópias lado a lado com espaço proporcional
+      drawNota(15); // primeira (esquerda)
+      drawNota(428); // segunda (direita), considerando 595*0.7 + um espaçamento de ~10px
+    }
   
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });

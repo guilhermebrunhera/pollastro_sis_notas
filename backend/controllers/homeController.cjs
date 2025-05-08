@@ -25,7 +25,7 @@ exports.listarDadosHome = (req, res) => {
                 notas
                 JOIN nota_itens ON notas.id = nota_itens.nota_id
             WHERE
-                notas.status = "Producao"
+                notas.status != "Paga"
             GROUP BY notas.id
         ) AS notas_sub
     `;
@@ -42,7 +42,7 @@ exports.listarDadosHome = (req, res) => {
                 notas
                 JOIN nota_itens ON notas.id = nota_itens.nota_id
             WHERE
-                notas.status = "Finalizada"
+                notas.status = "Paga"
             GROUP BY notas.id
         ) AS notas_sub
     `;

@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { deleteProduto, getProdutos, postNewProduto, putProduto } from '../../services/APIService'
 // import { NumericFormat } from 'react-number-format';
 import { formatarReaisSemSimboloString, removerAcentosTexto } from '../../components/utils/utils';
+import Toast from '../../components/Toasts/toasts';
+import { printProdutos } from './printProdutos';
 
 interface Produto {
   id?: number;
@@ -20,6 +22,7 @@ function Produtos() {
   const [produtoEditandoId, setProdutoEditandoId] = useState<number | null>(null);
   const [tipoSelecionado, setTipoSelecionado] = useState<'S' | 'P'>('P');
   const [termoFiltro, setTermoFiltro] = useState('');
+  const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
 
   useEffect(() => {
     listarProdutos();
@@ -55,7 +58,7 @@ function Produtos() {
 
     return formatted;
   };
-
+  
   const handleChangeProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProduto((prev) => ({
@@ -67,30 +70,39 @@ function Produtos() {
   const handleSubmitProduto = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (modoEdicao && produtoEditandoId !== null) {
-      putProduto(produtoEditandoId, produto)
-        .then(() => {
-          listarProdutos();
-          setModoEdicao(false);
-          setProdutoEditandoId(null);
-          setNovoProdutoOpen(false);
-          setTipoSelecionado('P');
-          setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
-        })
-        .catch(err => console.error(err));
+    produto.nome = produto.nome.trim();
+    produto.descricao = produto.descricao.trim();
+
+    if(parseFloat(produto.preco.replace('.', '').replace(',', '.')) == 0){
+      setToast({message: "Coloque um valor para o Produto.", type: "Alerta"}); return;
     } else {
-      postNewProduto(produto)
-        .then(data => {
-          if (data) {
+      if (modoEdicao && produtoEditandoId !== null) {
+        putProduto(produtoEditandoId, produto)
+          .then(() => {
+            setToast({message: "Produto salvo!", type: "Sucesso"})
             listarProdutos();
+            setModoEdicao(false);
+            setProdutoEditandoId(null);
             setNovoProdutoOpen(false);
             setTipoSelecionado('P');
             setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
-          } else {
-            console.error("Erro ao cadastrar produto:", data);
-          }
-        })
-        .catch(err => console.error(err));
+          })
+          .catch(err => console.error(err));
+      } else {
+        postNewProduto(produto)
+          .then(data => {
+            if (data) {
+              setToast({message: "Produto adicionado!", type: "Sucesso"})
+              listarProdutos();
+              setNovoProdutoOpen(false);
+              setTipoSelecionado('P');
+              setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
+            } else {
+              setToast({message: "Erro ao cadastrar produto: " + data, type: "Erro"})
+            }
+          })
+          .catch(err => setToast({message: "Erro ao cadastrar produto: " + err, type: "Erro"}));
+      }
     }
   };
 
@@ -98,17 +110,22 @@ function Produtos() {
     if (window.confirm("Tem certeza que deseja excluir este produto?")) {
       deleteProduto(id)
         .then(() => {
+          setToast({message: "Produto excluido!", type: "Sucesso"})
           setListaProdutos(listaProdutos.filter(produto => produto.id !== id));
         })
         .catch(err => {
-          console.error("Erro ao excluir produto:", err);
+          setToast({message: "Erro ao excluir produto, este produto já está sendo utilizado em um pedido! " + err, type: "Erro"})
         });
     }
   };
 
+  const imprimirProdutos = () => {
+    printProdutos(produtosFiltrados);
+  }
+
   return (
     <div className='content-clientes'>
-      <center>
+      <div style={{ maxWidth: "85%", alignItems: "center", justifyContent: "center", margin: "0 auto", display: "flex" }}>
         <button 
           className='default' 
           onClick={() => {
@@ -118,7 +135,8 @@ function Produtos() {
         >
           {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
         </button>
-      </center>
+        <button style={{maxWidth: "6rem"}} className='default' title='Download Lista Produtos' onClick={imprimirProdutos}>🖨️</button>
+      </div>
 
       {novoProdutoOpen ? 
         <div className='div-form-clientes' style={{ maxWidth: "80%", margin: "0 auto" }}>
@@ -222,6 +240,13 @@ function Produtos() {
         </ul>
       </div>
       }
+      {toast && (
+              <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(null)}
+              />
+            )}
     </div>
   );
 }
