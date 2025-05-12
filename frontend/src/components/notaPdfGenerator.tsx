@@ -82,13 +82,13 @@ export async function gerarNotaPDF(nota: NotaData) {
       
   
       // Cabeçalho
-      drawText(nota.data.split("/")[0], 78, 649, 12);
-      drawText(nota.data.split("/")[1], 103, 649, 12);
-      drawText(nota.data.split("/")[2], 127, 649, 12);
-      drawText(nota.telefone, 220, 651, 12);
+      drawText(nota.data.split("/")[0], 78, 652, 12);
+      drawText(nota.data.split("/")[1], 103, 652, 12);
+      drawText(nota.data.split("/")[2], 127, 652, 12);
+      drawText(nota.telefone, 220, 652, 12);
       drawText(nota.email, 376, 651, 12);
-      drawText(String(nota.nome), 85, 621);
-      drawText(nota.cidade, 92, 592);
+      drawText(String(nota.nome), 85, 622);
+      drawText(nota.cidade, 92, 593);
 
       switch(nota.numero.length){
         case 1: 
@@ -106,7 +106,7 @@ export async function gerarNotaPDF(nota: NotaData) {
       // drawText(": " + nota.numero + " - Sistema", 330, 686, 20);
   
       // Produtos
-      let y = 526;
+      let y = 527;
       let total = 0;
       nota.produtos.forEach((item) => {
 
@@ -118,7 +118,7 @@ export async function gerarNotaPDF(nota: NotaData) {
         const qtdWidth = font.widthOfTextAtSize(item.quantidade.toString(), 13 * scale);
 
 
-        drawTextRight(item.quantidade.toString(), 80, y, qtdWidth);
+        drawTextRight(item.quantidade.toString(), 78, y, qtdWidth);
         drawText(item.nome, 82, y);
         drawTextRight(formatarReaisSemSimboloString(item.preco_unitario), 482, y, precoUnitWidth);
         drawTextRight(formatarReaisSemSimboloString(item.preco_total), 554, y, precoTotalWidth);

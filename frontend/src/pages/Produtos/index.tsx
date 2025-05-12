@@ -125,9 +125,10 @@ function Produtos() {
 
   return (
     <div className='content-clientes'>
-      <div style={{ maxWidth: "85%", alignItems: "center", justifyContent: "center", margin: "0 auto", display: "flex" }}>
+      <div style={{ maxWidth: "80%", alignItems: "center", justifyContent: "space-between", margin: "0 auto", display: "flex" }}>
         <button 
-          className='default' 
+          className='default'
+          style={{width: '100%', margin: 0, padding: 0}} 
           onClick={() => {
             setNovoProdutoOpen(!novoProdutoOpen);
             setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
@@ -135,7 +136,7 @@ function Produtos() {
         >
           {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
         </button>
-        <button style={{maxWidth: "6rem"}} className='default' title='Download Lista Produtos' onClick={imprimirProdutos}>🖨️</button>
+        <button style={{maxWidth: "4rem", width: '100%'}} className='default' title='Imprimir Lista Produtos' onClick={imprimirProdutos}>🖨️</button>
       </div>
 
       {novoProdutoOpen ? 

@@ -104,6 +104,21 @@ function Notas() {
   );
 
   useEffect(() => {
+    const notaSalva = localStorage.getItem('notaFormulario');
+    const modoEdicaoSalvo = localStorage.getItem('notaModoEdicao');
+    const notaEditandoIdSalvo = localStorage.getItem('notaEditandoId');
+
+    if (notaSalva) {
+      setNota(JSON.parse(notaSalva));
+      setNovaNotaOpen(true);
+    }
+    if (modoEdicaoSalvo) {
+      setModoEdicao(JSON.parse(modoEdicaoSalvo));
+    }
+    if (notaEditandoIdSalvo) {
+      setNotaEditandoId(JSON.parse(notaEditandoIdSalvo));
+    }
+
     carregarDados();
     setDesconto(0);
     setCentavos(0);
@@ -112,9 +127,20 @@ function Notas() {
   useEffect(() => {
     if(novaNotaOpen && !modoEdicao){
       selectClienteRef.current?.focus()
-      setNota(prev => ({...prev, status: ''}))
+      const notaSalva = localStorage.getItem('notaFormulario');
+      if(notaSalva){}else{
+        setNota(prev => ({...prev, status: ''}))
+      }
     }
   }, [novaNotaOpen])
+
+  useEffect(() => {
+    if(nota.cliente_id !== 0){
+      localStorage.setItem('notaFormulario', JSON.stringify(nota));
+      localStorage.setItem('notaModoEdicao', JSON.stringify(modoEdicao));
+      localStorage.setItem('notaEditandoId', JSON.stringify(notaEditandoId));
+    }
+  }, [nota, modoEdicao, notaEditandoId]);
 
   const carregarDados = async () => {
     try {
@@ -192,6 +218,10 @@ function Notas() {
       } else {
         await postNota(nota);
       }
+      localStorage.removeItem('notaFormulario');
+      localStorage.removeItem('notaModoEdicao');
+      localStorage.removeItem('notaEditandoId');
+
       setNota({
         cliente_id: 0,
         data_emissao: new Date().toISOString().split('T')[0], // Data do dia
@@ -274,18 +304,6 @@ function Notas() {
           hasValorZerado = true
         }
       })
-
-      // hasQtdNULL ?
-      //   setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "Alerta"})
-        
-      // :
-      //   hasValorZerado ? 
-      //   setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "Alerta"})
-      //   :
-      //     nota.status === '' ?
-      //     setToast({ message: "Selecione um STATUS para o pedido!", type: "Alerta"})
-      //     :
-      //       buttonSubmitRef.current?.click()
       if(hasQtdNULL){
         setToast({ message: "Existe Produto(s) com a QUANTIDADE ZERADA, por favor coloque uma quantidade!", type: "Alerta"})
         return;
@@ -388,6 +406,9 @@ function Notas() {
             desconto: 0,
             desconto_obs: ""
           });
+          localStorage.removeItem('notaFormulario');
+          localStorage.removeItem('notaModoEdicao');
+          localStorage.removeItem('notaEditandoId');
         }}>
           {novaNotaOpen ? modoEdicao? "Cancelar Edição" :'Cancelar Pedido' : '+ Novo Pedido'}
         </button>

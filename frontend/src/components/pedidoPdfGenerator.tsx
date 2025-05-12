@@ -67,13 +67,13 @@ export async function gerarPedidoPDF(nota: NotaData) {
       };
   
       // Cabeçalho
-      drawText(nota.data.split("/")[0], 78, 649, 12);
-      drawText(nota.data.split("/")[1], 103, 649, 12);
-      drawText(nota.data.split("/")[2], 127, 649, 12);
-      drawText(nota.telefone, 220, 651, 12);
-      drawText(nota.email, 376, 651, 12);
-      drawText(String(nota.nome), 85, 621);
-      drawText(nota.cidade, 92, 592);
+      drawText(nota.data.split("/")[0], 78, 652, 12);
+      drawText(nota.data.split("/")[1], 103, 652, 12);
+      drawText(nota.data.split("/")[2], 127, 652, 12);
+      drawText(nota.telefone, 220, 652, 12);
+      drawText(nota.email, 376, 652, 12);
+      drawText(String(nota.nome), 85, 622);
+      drawText(nota.cidade, 92, 593);
 
       switch(nota.numero.length){
         case 1: 
