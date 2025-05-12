@@ -22,5 +22,5 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // });
 
 app.listen(3000, () => {
-    console.log('Servidor rodando na porta 80');
+    console.log('Servidor rodando na porta 3000');
 });
