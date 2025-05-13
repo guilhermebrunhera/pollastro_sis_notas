@@ -11,7 +11,8 @@ import {
   getProdutosID, 
   alterStatusNota, 
   alterNotaImpressa, 
-  getNotaID
+  getNotaID,
+  changeDescProduto
 } from '../../services/APIService';
 import { format } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
@@ -44,6 +45,8 @@ interface NotaItem {
   produto_id: number;
   quantidade: number | null;
   preco_unitario: number;
+  centavos?: number | null;
+  descricaoChange?: string | ""
 }
 
 interface Nota {
@@ -80,7 +83,7 @@ function Notas() {
   const [novaNotaOpen, setNovaNotaOpen] = useState(false);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [notaEditandoId, setNotaEditandoId] = useState<number | null>(null);
-  const [centavos, setCentavos] = useState(0);
+  // const [centavos, setCentavos] = useState(0);
   const [desconto, setDesconto] = useState(0);
   const buttonSubmitRef = useRef<HTMLButtonElement>(null);
   const selectClienteRef = useRef<any>(null);
@@ -121,7 +124,6 @@ function Notas() {
 
     carregarDados();
     setDesconto(0);
-    setCentavos(0);
   }, []);
 
   useEffect(() => {
@@ -183,13 +185,17 @@ function Notas() {
         novosItens[index] = { 
           ...novosItens[index], 
           produto_id: value as number,
-          preco_unitario: produtoSelecionado.preco
+          preco_unitario: produtoSelecionado.preco,
+          descricaoChange: produtoSelecionado.descricao
         };
       }
     } else if (field === 'preco_unitario') {
-      const valorNumerico = typeof value === 'string'
-      ? parseFloat(value.replace(',', '.'))
+      let valorNumerico = typeof value === 'string'
+      ? parseFloat(value.replace('.', '').replace(',', '.'))
       : value;
+
+      valorNumerico = valorNumerico / 10;
+
       novosItens[index][field] = isNaN(valorNumerico) ? 0 : valorNumerico;
     }
     
@@ -199,7 +205,7 @@ function Notas() {
   const adicionarItem = () => {
     setNota(prev => ({
       ...prev,
-      itens: [...prev.itens, { produto_id: 0, quantidade: null, preco_unitario: 0 }]
+      itens: [...prev.itens, { produto_id: 0, quantidade: null, preco_unitario: 0, descricaoChange: "" }]
     }));
   };
 
@@ -234,19 +240,22 @@ function Notas() {
       setModoEdicao(false);
       setNotaEditandoId(null);
       carregarDados();
+      setToast({message: "Pedido salvo!", type: "Sucesso"})
     } catch (err) {
       setToast({ message: String(err), type: "Erro"})
     }
   };
 
-  const handleChangeValorProduto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeValorProduto = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const apenasNumeros = e.target.value.replace(/\D/g, ""); // remove tudo que não for número
 
     // Limita o valor a no máximo 9 dígitos (R$ 99.999.999,99)
     const valorLimpo = apenasNumeros.slice(0, 9);
 
     const novoValor = parseInt(valorLimpo || "0", 10); // se vazio, volta pra 0
-    setCentavos(novoValor);
+    nota.itens[index].centavos = novoValor
+
+    console.log(nota.itens[index].preco_unitario)
     
   };
 
@@ -337,6 +346,25 @@ function Notas() {
     }
   };
 
+  const handleChangeDescProdutoServico = async (id: number, index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    
+    const novaNota = { ...nota };
+        novaNota.itens = [...nota.itens]; // copia os itens
+        novaNota.itens[index] = { ...novaNota.itens[index], descricaoChange: e.target.value };
+
+        setNota(novaNota);
+
+
+    try{
+      changeDescProduto(id, e.target.value).then( () => {
+      }).catch(err => {
+        alert(err)
+      })
+    }catch(err){
+      alert(err)
+    }
+  }
+
   function carregarNotaParaPDF(id: number, nota: Nota, download: boolean) {
     getProdutosID(id)
       .then((data: ProdutosDaNota[]) => {
@@ -395,14 +423,13 @@ function Notas() {
         <button className="default" onClick={() => {
           setNovaNotaOpen(!novaNotaOpen);
           setModoEdicao(false);
-          setCentavos(0);
           setDesconto(0);
           setNota({
             cliente_id: 0,
             data_emissao: new Date().toISOString().split('T')[0], // Data do dia
             observacoes: '',
             status: 'Producao', // Status padrão
-            itens: [],
+            itens: [{produto_id: 0, quantidade: 0, preco_unitario: 0}],
             desconto: 0,
             desconto_obs: ""
           });
@@ -421,12 +448,12 @@ function Notas() {
             <label>Cliente:</label>
             <Select
               ref={selectClienteRef}
-              name="cliente_id"  // Certificando que o name seja 'cliente_id'
+              name="cliente_id" 
               options={clientes.map(c => ({ value: c.id, label: c.nome }))}
               value={clientes.map(c => ({ value: c.id, label: c.nome })).find(op => op.value === nota.cliente_id)}
               onChange={(op) => {
                 if (op) {
-                  setNota(prev => ({ ...prev, cliente_id: op.value }));  // Atualizando corretamente o cliente_id
+                  setNota(prev => ({ ...prev, cliente_id: op.value }));
                 }
               }}
               placeholder="Selecione o cliente"
@@ -477,44 +504,68 @@ function Notas() {
             {nota.itens.map((item, index) => (
 
               <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <Select
-                  name="produto_id" 
-                  options={produtos.map(c => ({ value: c.id, label: c.nome + " - " + c.descricao }))}
-                  value={produtos.map(c => ({ value: c.id, label: c.nome + " - " + c.descricao })).find(op => op.value === item.produto_id)}
-                  onChange={(op) => {
-                    handleItemChange(index, 'produto_id', op ?  op.value : 0)
-                  }}
-                  placeholder="Digite ou Selecione o Produto Desejado"
-                  styles={{
-                    singleValue: (provided) => ({
-                      ...provided,
-                      color: 'black',
-                      width: '25rem'
-                    }),
-                    option: (provided) => ({
-                      ...provided,
-                      color: 'black',
-                    }),
-                    control: (provided) => ({
-                      ...provided,
-                      backgroundColor: 'white',
-                    }),
-                    menu: (provided) => ({
-                      ...provided,
-                      width: '25rem',
-                    }),
-                  }}
-                />
+                {item.produto_id !== 0 
+                && produtos.find(p => p.id === item.produto_id)
+                && produtos.find(p => p.id === item.produto_id)?.tipo === 'S' ? (
+                  <>
+                    <h3>{produtos.find(p => p.id === item.produto_id)?.nome}</h3>
+                    <input 
+                      placeholder='Descrição do serviço'
+                      onChange={(e) => handleChangeDescProdutoServico(item.produto_id, index, e)} 
+                      value={item.descricaoChange}
+                    />
+                  </>
+                ) : (
+                  (() => {
+                    // Lista de IDs de produtos já usados, exceto o atual
+                    const produtosSelecionadosIds = nota.itens
+                      .map((i, idx) => idx !== index ? i.produto_id : null)
+                      .filter(id => {
+                        return id !== null
+                      });
+
+                    // Filtrar opções disponíveis
+                    const opcoesDisponiveis = produtos
+                      .filter(p =>  !produtosSelecionadosIds.includes(p.id))
+                      .map(p => ({
+                        value: p.id,
+                        label: `${p.nome} - ${p.descricao}`
+                      }));
+
+                    return (
+                      <Select
+                        name="produto_id"
+                        options={opcoesDisponiveis}
+                        value={opcoesDisponiveis.find(op => op.value === item.produto_id) || null}
+                        onChange={(op) => {
+                          handleItemChange(index, 'produto_id', op ? op.value : 0);
+                        }}
+                        placeholder="Digite ou Selecione o Produto Desejado"
+                        styles={{
+                          singleValue: (provided) => ({
+                            ...provided,
+                            color: 'black',
+                            width: '25rem'
+                          }),
+                          option: (provided) => ({
+                            ...provided,
+                            color: 'black',
+                          }),
+                          control: (provided) => ({
+                            ...provided,
+                            backgroundColor: 'white',
+                          }),
+                          menu: (provided) => ({
+                            ...provided,
+                            width: '25rem',
+                          }),
+                        }}
+                      />
+                    );
+                  })()
+                )}
                 
-                {/* <select
-                  value={item.produto_id}
-                  onChange={(e) => handleItemChange(index, 'produto_id', parseInt(e.target.value))}
-                >
-                  <option value="0">Selecione</option>
-                  {produtos.map(p => (
-                    <option key={p.id} value={p.id}>{p.nome}</option>
-                  ))}
-                </select> */}
+                
                 <input
                 style={{maxWidth: '20%'}}
                   type="text"
@@ -536,10 +587,10 @@ function Notas() {
                     return (
                       <input
                         type="text"
-                        value={formatarCentavosParaBRL(centavos)}
+                        value={formatarCentavosParaBRL(item.centavos ? item.centavos : 0)}
                         onChange={(e) => {
-                          handleChangeValorProduto(e);
-                          handleItemChange(index, `preco_unitario`, centavos / 10)
+                          handleChangeValorProduto(e, index);
+                          handleItemChange(index, `preco_unitario`, (item.centavos ? item.centavos : 0) / 10)
                         }}
                         style={{ maxWidth: "200px", fontSize: "16px", padding: "4px" }}
                       />

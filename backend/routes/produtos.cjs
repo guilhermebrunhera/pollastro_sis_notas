@@ -8,5 +8,6 @@ router.get('/produtos/:id', controller.buscarProdutoPorId);
 router.post('/produtos', controller.cadastrarProduto);
 router.put('/produtos/:id', controller.editarProduto);
 router.delete('/produtos/:id', controller.deletarProduto);
+router.put('/produtos/changeDesc/:id', controller.alterarDescProdutoServico);
 
 module.exports = router;

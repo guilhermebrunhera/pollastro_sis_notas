@@ -105,6 +105,16 @@ export async function deleteProduto(id: number) {
     }
 }
 
+export async function changeDescProduto(id: number, descricao: string) {
+    try {
+      const response = await axios.put(`${API_URL}/produtos/changeDesc/${id}`, {descricao : descricao});
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao editar produto:", error);
+      throw error;
+    }
+}
+
 // ____________________________________________________ NOTAS ______________________________________//
 
 export const getNotas = async () => {
@@ -135,6 +145,7 @@ export const postNota = async (nota: {
     preco_unitario: number;
   }[];
 }) => {
+  console.log(nota.itens[0].preco_unitario)
   const res = await axios.post(`${API_URL}/notas`, nota);  // Corrigido aqui
   return res.data;
 };

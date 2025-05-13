@@ -105,10 +105,6 @@ exports.detalharNota = (req, res) => {
 exports.criarNota = (req, res) => {
     const { cliente_id, itens, data_emissao, observacoes, desconto, status, desconto_obs } = req.body;
 
-    // Configurar data e status default
-    // const data_emissao = new Date().toISOString().split('T')[0];  // Pega a data no formato YYYY-MM-DD
-    // const status = 'Producao';  // Valor padrão de status
-
     const notaSQL = 'INSERT INTO notas (cliente_id, data_emissao, status, observacoes, desconto, desconto_obs) VALUES (?, ?, ?, ?, ?, ?)';
     db.query(notaSQL, [cliente_id, data_emissao, status, observacoes, desconto, desconto_obs], (err, result) => {
         if (err) return res.status(500).json({ error: err });

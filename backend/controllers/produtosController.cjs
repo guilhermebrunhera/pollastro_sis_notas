@@ -66,3 +66,16 @@ exports.deletarProduto = (req, res) => {
         res.json({ message: 'Produto removido com sucesso' });
     });
 };
+
+exports.alterarDescProdutoServico = (req, res) => {
+    const id = req.params.id;
+    const { descricao } = req.body;
+    db.query(
+        'UPDATE produtos SET descricao = ? WHERE id = ?',
+        [descricao, id],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err });
+            res.json({ message: 'Descricao do Produto atualizado com sucesso' });
+        }
+    );
+};
