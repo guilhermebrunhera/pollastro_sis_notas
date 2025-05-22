@@ -4,3 +4,23 @@
     padding-right: 10vh;
     width: 100vw;
 }
+
+.legend-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2e2e2e; /* fundo escuro */
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.legend-box span{
+    font-size: medium;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

@@ -145,6 +145,13 @@ li .acoes {
   justify-content: center;
 }
 
+li .dropdsown-container {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
 .botao-icone {
   background: none;
   border: none;

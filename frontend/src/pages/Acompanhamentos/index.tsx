@@ -4,6 +4,7 @@ import { deleteAcompanhamento, getAcompanhamentos, getProdutos, postNewAcompanha
 import { format } from 'date-fns';
 import Select, { SingleValue } from 'react-select';
 import Toast from '../../components/Toasts/toasts';
+import Header from '../../components/Header';
 
 interface Acompanhamentos {
   id: number;
@@ -144,6 +145,8 @@ function Acompanhamentos() {
   };
 
   return (
+    <>
+    <Header />
     <div className='content-acompanhamentos'>
       <center>
         <button 
@@ -260,7 +263,7 @@ function Acompanhamentos() {
           {acompanhamentoFiltrado.map((acompanhamento) => (
             <li key={acompanhamento.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>
-                {acompanhamento.nome} 
+                {acompanhamento.nome} - {acompanhamento.descricao ? acompanhamento.descricao : ""}
               </span>
               <span>
                 {acompanhamento.quantidade}
@@ -286,6 +289,7 @@ function Acompanhamentos() {
               />
             )}
     </div>
+    </>
   );
 }
 

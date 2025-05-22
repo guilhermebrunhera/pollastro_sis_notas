@@ -20,6 +20,8 @@ import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString, removerAce
 import { gerarPedidoPDF } from '../../components/pedidoPdfGenerator';
 import ModalUploadImagens from '../../components/utils/modalImagens';
 import Toast from '../../components/Toasts/toasts';
+import Header from '../../components/Header';
+import { MdApps } from 'react-icons/md';
 
 interface Cliente {
   id: number;
@@ -38,7 +40,8 @@ interface Produto {
   nome: string;
   preco: number;
   descricao: string;
-  tipo: string
+  tipo: string;
+  foto?: string;
 }
 
 interface NotaItem {
@@ -50,7 +53,7 @@ interface NotaItem {
 }
 
 interface Nota {
-  id?: number;
+  id: number;
   cliente_id: number;
   data_emissao: string;
   observacoes: string;
@@ -64,7 +67,11 @@ interface Nota {
   totalNotaSemDesconto?: string;
   desconto?: number;
   desconto_obs?: string;
-  nota_impressa? : boolean
+  nota_impressa? : boolean;
+  cidade?: string;
+  cep?: string;
+  contato?: string;
+  tel_contato?: string
 }
 
 const formatarCentavosParaBRL = (centavos: number) => {
@@ -89,8 +96,12 @@ function Notas() {
   const selectClienteRef = useRef<any>(null);
   const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
   const [termoFiltro, setTermoFiltro] = useState('');
+  const [openDrops, setOpenDrops] = useState<number | null>(null);
+  const [openDropsFoto, setOpenDropsFoto] = useState<string | undefined>(undefined);
+  const dropsRef = useRef(null);
 
   const [nota, setNota] = useState<Nota>({
+    id: 0,
     cliente_id: 0,
     data_emissao: new Date().toISOString().split('T')[0], // Data do dia
     observacoes: '',
@@ -105,6 +116,16 @@ function Notas() {
       removerAcentosTexto(format(notas.data_emissao, "ddMMyyyy")).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase()) ||
       removerAcentosTexto(format(notas.data_emissao, "dd/MM/yyyy")).toLowerCase().includes(removerAcentosTexto(termoFiltro).toLowerCase())
   );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropsRef.current && !(dropsRef.current as any).contains(event.target)) {
+        // setOpenDrops(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const notaSalva = localStorage.getItem('notaFormulario');
@@ -229,6 +250,7 @@ function Notas() {
       localStorage.removeItem('notaEditandoId');
 
       setNota({
+        id:0,
         cliente_id: 0,
         data_emissao: new Date().toISOString().split('T')[0], // Data do dia
         observacoes: '',
@@ -255,7 +277,7 @@ function Notas() {
     const novoValor = parseInt(valorLimpo || "0", 10); // se vazio, volta pra 0
     nota.itens[index].centavos = novoValor
 
-    console.log(nota.itens[index].preco_unitario)
+    
     
   };
 
@@ -280,6 +302,7 @@ function Notas() {
       let notaItens = data.itens;
 
       setNota({
+        id: id,
         cliente_id: notaData.cliente_id,
         data_emissao: format(notaData.data_emissao, "yyyy-MM-dd"),
         observacoes: notaData.observacoes,
@@ -291,15 +314,16 @@ function Notas() {
       setModoEdicao(true);
       setNotaEditandoId(id);
       setNovaNotaOpen(true);
+      setOpenDrops(null);
     })
     
   };
 
-  const handleHasQtdProdutos = () => {
+  const handleHasQtdProdutos = (newProduct: boolean) => {
     let hasQtdNULL = false;
     let hasValorZerado = false;
 
-    if(nota.cliente_id === 0){
+    if(nota.cliente_id === 0 && !newProduct){
       setToast({ message: "Selecione um Cliente para o pedido!", type: "Alerta"})
       return;
     }
@@ -321,17 +345,23 @@ function Notas() {
           setToast({ message: "Existe Produto(s) com o VALOR ZERADO, por favor coloque um valor!", type: "Alerta"})
           return;
         }else{
-          if(nota.status === ""){
+          if(nota.status === "" && !newProduct){
             setToast({ message: "Selecione um STATUS para o pedido!", type: "Alerta"})
             return;
-          }else{
+          }else if(!newProduct){
             buttonSubmitRef.current?.click()
+          } else{
+            adicionarItem();
           }
         }
       }
     } else {
-      setToast({ message: "Adicione produtos para o Pedido!", type: "Alerta"})
-      return;
+      if(!newProduct){
+        setToast({ message: "Adicione produtos para o Pedido!", type: "Alerta"})
+        return;
+      }else{
+        adicionarItem();
+      }
     }
   }
 
@@ -340,6 +370,7 @@ function Notas() {
       try {
         await deleteNota(id);
         setNotas(notas.filter(n => n.id !== id));
+        setOpenDrops(null);
       } catch (err) {
         console.error(err);
       }
@@ -373,7 +404,7 @@ function Notas() {
             nome : nota.cliente ? nota.cliente : "",
             numero: String(nota.id),
             data: format(nota.data_emissao, "dd/MM/yy"),
-            cidade: String(nota.endereco),
+            cidade: String(nota.cidade),
             telefone: String(nota.telefone) ,
             email: String(nota.email),
             endereco: String(nota.endereco),
@@ -381,7 +412,10 @@ function Notas() {
             desconto: nota.desconto !== undefined? nota.desconto : 0,
             desconto_obs: nota.desconto_obs !== undefined? nota.desconto_obs : "",
             download,
-            produtos: data
+            produtos: data,
+            contato: String(nota.contato ? nota.contato : ""),
+            cep: String(nota.cep ? nota.cep : ""),
+            tel_contato: String(nota.tel_contato ? nota.tel_contato : "")
           }
         )
         if (!download){
@@ -391,6 +425,7 @@ function Notas() {
             );
           })
         }
+        setOpenDrops(null);
       })
       .catch(err => { console.error(err)})
   }
@@ -413,11 +448,14 @@ function Notas() {
             produtos: data
           }
         )
+        setOpenDrops(null);
       })
       .catch(err => { console.error(err)})
   }
 
   return (
+    <>
+    <Header />
     <div className="content-clientes">
       <center>
         <button className="default" onClick={() => {
@@ -425,6 +463,7 @@ function Notas() {
           setModoEdicao(false);
           setDesconto(0);
           setNota({
+            id:0,
             cliente_id: 0,
             data_emissao: new Date().toISOString().split('T')[0], // Data do dia
             observacoes: '',
@@ -445,41 +484,46 @@ function Notas() {
         <div className="div-form-clientes" style={{ maxWidth: '80%', margin: '0 auto' }}>
           <h2>{modoEdicao ? 'Editar Pedido' : 'Novo Pedido'}</h2>
           <form onSubmit={handleSubmitNota}>
-            <label>Cliente:</label>
-            <Select
-              ref={selectClienteRef}
-              name="cliente_id" 
-              options={clientes.map(c => ({ value: c.id, label: c.nome }))}
-              value={clientes.map(c => ({ value: c.id, label: c.nome })).find(op => op.value === nota.cliente_id)}
-              onChange={(op) => {
-                if (op) {
-                  setNota(prev => ({ ...prev, cliente_id: op.value }));
-                }
-              }}
-              placeholder="Selecione o cliente"
-              styles={{
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: 'black',
-                }),
-                option: (provided) => ({
-                  ...provided,
-                  color: 'black',
-                }),
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: 'white',
-                }),
-              }}
-            />
-
-            <label>Data de Emissão:</label>
-            <input
-              type="date"
-              value={nota.data_emissao}
-              onChange={(e) => setNota(prev => ({ ...prev, data_emissao: e.target.value }))}
-              required
-            />
+            <div style={{width: `100%`, display: `flex`, gap: `0.5rem`, alignItems: `center`}}>
+              <div style={{width: `70%`}}>
+                <label>Cliente:</label>
+                <Select
+                  ref={selectClienteRef}
+                  name="cliente_id" 
+                  options={clientes.map(c => ({ value: c.id, label: c.nome }))}
+                  value={clientes.map(c => ({ value: c.id, label: c.nome })).find(op => op.value === nota.cliente_id)}
+                  onChange={(op) => {
+                    if (op) {
+                      setNota(prev => ({ ...prev, cliente_id: op.value }));
+                    }
+                  }}
+                  placeholder="Selecione o cliente"
+                  styles={{
+                    singleValue: (provided) => ({
+                      ...provided,
+                      color: 'black',
+                    }),
+                    option: (provided) => ({
+                      ...provided,
+                      color: 'black',
+                    }),
+                    control: (provided) => ({
+                      ...provided,
+                      backgroundColor: 'white',
+                    }),
+                  }}
+                />
+              </div>
+              <div style={{width: `30%`}}>
+                <label>Data de Emissão:</label>
+                <input
+                  type="date"
+                  value={nota.data_emissao}
+                  onChange={(e) => setNota(prev => ({ ...prev, data_emissao: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
 
             <label>Observações:</label>
             <input
@@ -499,7 +543,8 @@ function Notas() {
               <option value="Finalizada">Finalizado</option>
               <option value="Paga">Pago</option>
             </select>
-
+            <br/>
+            <hr></hr>
             <h3>Produtos</h3>
             {nota.itens.map((item, index) => (
 
@@ -533,34 +578,36 @@ function Notas() {
                       }));
 
                     return (
-                      <Select
-                        name="produto_id"
-                        options={opcoesDisponiveis}
-                        value={opcoesDisponiveis.find(op => op.value === item.produto_id) || null}
-                        onChange={(op) => {
-                          handleItemChange(index, 'produto_id', op ? op.value : 0);
-                        }}
-                        placeholder="Digite ou Selecione o Produto Desejado"
-                        styles={{
-                          singleValue: (provided) => ({
-                            ...provided,
-                            color: 'black',
-                            width: '25rem'
-                          }),
-                          option: (provided) => ({
-                            ...provided,
-                            color: 'black',
-                          }),
-                          control: (provided) => ({
-                            ...provided,
-                            backgroundColor: 'white',
-                          }),
-                          menu: (provided) => ({
-                            ...provided,
-                            width: '25rem',
-                          }),
-                        }}
-                      />
+                      <div style={{maxWidth: `30rem`, width:`30rem`}}>
+                        <Select
+                          name="produto_id"
+                          options={opcoesDisponiveis}
+                          value={opcoesDisponiveis.find(op => op.value === item.produto_id) || null}
+                          onChange={(op) => {
+                            handleItemChange(index, 'produto_id', op ? op.value : 0);
+                          }}
+                          placeholder="Digite ou Selecione o Produto Desejado"
+                          styles={{
+                            singleValue: (provided) => ({
+                              ...provided,
+                              color: 'black',
+                              width: '25rem'
+                            }),
+                            option: (provided) => ({
+                              ...provided,
+                              color: 'black',
+                            }),
+                            control: (provided) => ({
+                              ...provided,
+                              backgroundColor: 'white',
+                            }),
+                            menu: (provided) => ({
+                              ...provided,
+                              width: '25rem',
+                            }),
+                          }}
+                        />
+                      </div>
                     );
                   })()
                 )}
@@ -611,6 +658,37 @@ function Notas() {
                   }
                 })()}
                 <button type="button" onClick={() => removerItem(index)}>❌</button>
+                {(() => {
+                  
+                  if(item.produto_id !== 0 && item.produto_id !== undefined && item.produto_id !== null){
+                    let produtoFilter = produtos.filter(prod => prod.id === item.produto_id)
+
+                    if(produtoFilter[0] && produtoFilter[0].foto && produtoFilter[0].foto != "" && produtoFilter[0].foto != null && produtoFilter[0].foto != undefined){
+                      return(
+                        <div style={{position: `relative`, alignSelf: 'center'}}>
+                          <button className='botao-icone' type='button' onClick={() => setOpenDropsFoto(openDropsFoto === produtoFilter[0].foto ? "" : produtoFilter[0].foto)}>📷</button>
+                          {openDropsFoto === produtoFilter[0].foto && ( 
+                            <div className='dropdownFunc' style={{
+                              position: `absolute`,
+                              top: `100%`,
+                              right: '15px',
+                              backgroundColor: `#131313`,
+                              boxShadow: `0 2px 8px rgba(49, 49, 49, 0.1)`,
+                              padding: `8px`,
+                              borderRadius: `4px`,
+                              zIndex: `10`,
+                            }}>
+                                <img style={{width: `200px`, height: `200px`}} src={`http://localhost:3000/uploads/`+produtoFilter[0].foto}></img>
+                            </div>
+                          )}
+                        </div>
+                        
+                      )
+                    }
+                  }else{
+                    return(<></>)
+                  }
+                })()}
               </div>
             ))}
             {(() => {
@@ -618,9 +696,10 @@ function Notas() {
                 if(hasProduto){
                   return(
                     <>
-                      <br/>
+                      
+                      {/* <br/>
                       <hr></hr>
-                      <br/>
+                      <br/> */}
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <label>Desconto?</label>
                         <input
@@ -640,7 +719,6 @@ function Notas() {
                               <input
                                 type="text"
                                 value={nota.desconto_obs}
-                                required
                                 onChange={(e) => setNota(prev => ({ ...prev, desconto_obs: e.target.value }))}
                                 style={{ fontSize: "16px", padding: "4px" }}
                               />
@@ -653,9 +731,9 @@ function Notas() {
                   )
                 }
             })()}
-            <button type="button" className='default-form' onClick={adicionarItem}>+ Produto</button>
+            <button type="button" className='default-form' onClick={() => handleHasQtdProdutos(true)}>+ Produto</button>
 
-            <button className="save" type='button' onClick={handleHasQtdProdutos}>{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
+            <button className="save" type='button' onClick={() => handleHasQtdProdutos(false)}>{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
             <button className="save" hidden ref={buttonSubmitRef} type="submit"></button>
             <br />
           </form>
@@ -704,13 +782,32 @@ function Notas() {
                   </select>
                   }
                 </span>
-                <div className="acoes" style={{width: "20%"}}>
-                  {nota.status === "Producao" ? <button title='Imprimir Serviço' className='botao-icone' onClick={() => carregarPedidoParaPDF(nota.id!, nota)}>📋</button> : <></>}
-                  <button title='Imprimir' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
-                  <button title='Download' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
-                  <ModalUploadImagens notaId={nota.id}/>
-                  {!nota.nota_impressa ? <button title='Editar' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
-                  {nota.status !== "Finalizada" && nota.status !== "Paga" && !nota.nota_impressa ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>}
+                <div className="acoes" style={{width: "5%", position: `relative`, alignSelf: 'center'}} ref={dropsRef}>
+                  <div className='dropdsown-container' style={{}}>
+                    <MdApps size={30} className='botao-icone' onClick={() => setOpenDrops(openDrops === nota.id ? null : nota.id)}/>
+                    {openDrops === nota.id && (
+                      <div className='dropdown-funcs' style={{
+                        position: `absolute`,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)', // 3 colunas
+                        gap: '8px',
+                        top: `100%`,
+                        left: '18px',
+                        backgroundColor: `#131313`,
+                        boxShadow: `0 2px 8px rgba(49, 49, 49, 0.1)`,
+                        padding: `8px`,
+                        borderRadius: `4px`,
+                        zIndex: `10`,
+                      }}>
+                          {nota.status === "Producao" ? <button title='Imprimir Serviço' className='botao-icone' onClick={() => carregarPedidoParaPDF(nota.id!, nota)}>📋</button> : <></>}
+                          <button title='Imprimir' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
+                          <button title='Download' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
+                          <ModalUploadImagens notaId={nota.id}/>
+                          {nota.status !== "Paga" ? <button title='Editar' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
+                          {nota.status !== "Finalizada" && nota.status !== "Paga" && (!nota.nota_impressa || nota.status === `Cancelada`) ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>} 
+                      </div>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}
@@ -725,6 +822,7 @@ function Notas() {
         />
       )}
     </div>
+    </>
   );
 }
 

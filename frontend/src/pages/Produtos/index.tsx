@@ -1,10 +1,11 @@
 import './styles.css'
 import { useState, useEffect } from 'react'
-import { deleteProduto, getProdutos, postNewProduto, putProduto } from '../../services/APIService'
+import { deleteProduto, getProdutos, postNewProduto, putProduto, removeFotoProd } from '../../services/APIService'
 // import { NumericFormat } from 'react-number-format';
 import { formatarReaisSemSimboloString, removerAcentosTexto } from '../../components/utils/utils';
 import Toast from '../../components/Toasts/toasts';
 import { printProdutos } from './printProdutos';
+import Header from '../../components/Header';
 
 interface Produto {
   id?: number;
@@ -12,6 +13,7 @@ interface Produto {
   descricao: string;
   preco: string;
   tipo: string;
+  foto?: string;
 }
 
 function Produtos() {
@@ -23,11 +25,19 @@ function Produtos() {
   const [tipoSelecionado, setTipoSelecionado] = useState<'S' | 'P'>('P');
   const [termoFiltro, setTermoFiltro] = useState('');
   const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
+  const [foto, setFoto] = useState<File | null>(null)
+  const [openDropsFoto, setOpenDropsFoto] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     listarProdutos();
-    setTipoSelecionado(`P`)
+    setTipoSelecionado(`P`);
+    
   }, []);
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setFoto(file);
+  };
 
   function listarProdutos() {
     getProdutos()
@@ -70,14 +80,17 @@ function Produtos() {
   const handleSubmitProduto = (e: React.FormEvent) => {
     e.preventDefault();
 
-    produto.nome = produto.nome.trim();
-    produto.descricao = produto.descricao.trim();
+    setProduto(prev => ({
+      ...prev,
+      nome: prev.nome.trim(),
+      descricao: prev.descricao.trim()
+    }));
 
     if(parseFloat(produto.preco.replace('.', '').replace(',', '.')) == 0){
       setToast({message: "Coloque um valor para o Produto.", type: "Alerta"}); return;
     } else {
       if (modoEdicao && produtoEditandoId !== null) {
-        putProduto(produtoEditandoId, produto)
+        putProduto(produtoEditandoId, produto, foto)
           .then(() => {
             setToast({message: "Produto salvo!", type: "Sucesso"})
             listarProdutos();
@@ -89,7 +102,7 @@ function Produtos() {
           })
           .catch(err => console.error(err));
       } else {
-        postNewProduto(produto)
+        postNewProduto(produto, foto)
           .then(data => {
             if (data) {
               setToast({message: "Produto adicionado!", type: "Sucesso"})
@@ -123,7 +136,18 @@ function Produtos() {
     printProdutos(produtosFiltrados);
   }
 
+  const removerFotoProduto = (id: number) => {
+    removeFotoProd(id).then(data => {
+      if(data.removed){
+        setProduto({...produto, foto: ""});
+        setToast({message: "Foto excluida", type: "Sucesso"})
+      }
+    })
+  }
+
   return (
+    <>
+    <Header />
     <div className='content-clientes'>
       <div style={{ maxWidth: "80%", alignItems: "center", justifyContent: "space-between", margin: "0 auto", display: "flex" }}>
         <button 
@@ -131,7 +155,8 @@ function Produtos() {
           style={{width: '100%', margin: 0, padding: 0}} 
           onClick={() => {
             setNovoProdutoOpen(!novoProdutoOpen);
-            setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P" });
+            setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P", foto: "" });
+            setFoto(null)
           }}
         >
           {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
@@ -140,60 +165,94 @@ function Produtos() {
       </div>
 
       {novoProdutoOpen ? 
-        <div className='div-form-clientes' style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <div style={{ maxWidth: "80%", margin: "0 auto" }}>
           <h2>Cadastrar Novo Produto</h2>
           <form onSubmit={handleSubmitProduto}>
-            <div>
-              <label>Nome do Produto:</label>
-              <input
-                type="text"
-                name="nome"
-                value={produto.nome}
-                onChange={handleChangeProduto}
-                required
-              />
-            </div>
-            <div>
-              <label>Descrição/Fabricante:</label>
-              <input
-                type="text"
-                name="descricao"
-                value={produto.descricao}
-                onChange={handleChangeProduto}
-              />
-            </div>
-            <div>
-              <label>Preço:</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={produto.preco}
-                onChange={(input) => {
-                  let valor = handleChangeValorProduto(input.target.value);
-                  setProduto((prev) => ({
-                    ...prev,
-                    preco: valor || "0,00",
-                  }));
-                }}
-              />
-            </div>
-            <div>
-              <label>Tipo de Produto:</label>
-              <select
-                name='tipo'
-                value={tipoSelecionado}
-                onChange={(e) => {
-                  setTipoSelecionado(e.target.value as 'S' | 'P')
-                  setProduto((prev) => ({
-                    ...prev,
-                    tipo: e.target.value || "P",
-                  }));
-                }}
-                
-              >
-                <option value="P">Produto</option>
-                <option value="S">Serviço</option>
-              </select>
+            <div className='div-form-produtos'>
+              <div style={{width: "100%"}}>
+                <div style={{maxWidth: "100%"}}>
+                  <label>Nome do Produto:</label>
+                  <input
+                    type="text"
+                    name="nome"
+                    value={produto.nome}
+                    onChange={handleChangeProduto}
+                    required
+                  />
+                </div>
+                <div style={{maxWidth: "100%"}}>
+                  <label>Descrição/Fabricante (Opcional):</label>
+                  <input
+                    type="text"
+                    name="descricao"
+                    value={produto.descricao}
+                    onChange={handleChangeProduto}
+                  />
+                </div>
+                <div style={{maxWidth: "100%"}}>
+                  <label>Preço:</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={produto.preco}
+                    onChange={(input) => {
+                      let valor = handleChangeValorProduto(input.target.value);
+                      setProduto((prev) => ({
+                        ...prev,
+                        preco: valor || "0,00",
+                      }));
+                    }}
+                  />
+                </div>
+                <div style={{maxWidth: "100%"}}>
+                  <label>Tipo de Produto:</label>
+                  <select
+                    name='tipo'
+                    value={tipoSelecionado}
+                    onChange={(e) => {
+                      setTipoSelecionado(e.target.value as 'S' | 'P')
+                      setProduto((prev) => ({
+                        ...prev,
+                        tipo: e.target.value || "P",
+                      }));
+                    }}
+                    
+                  >
+                    <option value="P">Produto</option>
+                    <option value="S">Serviço</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{width: "100%"}}>
+                <div style={{maxWidth: "100%"}}>
+                  <label>Foto do Produto: </label> <br />
+                  {produto.foto !== "" ?
+                    <>
+                      <img 
+                        style={{height: '200px', width: '200px', marginTop: "10px"}} 
+                        src={`http://localhost:3000/uploads/`+produto.foto}
+                        onClick={() => window.open(`http://localhost:3000/uploads/`+produto.foto, '_blank')}
+                      >
+                      </img>
+                      <button type="button" className='botao-icone' onClick={() => {
+                        removerFotoProduto(produto.id ? produto.id: 0);
+                      }}>
+                        🗑️
+                      </button>
+                    </>
+                  :
+                      <>
+                        <input type="file" accept="image/*" onChange={handleFotoChange} />
+                        {foto ? <><img 
+                          style={{height: '200px', width: '200px', marginTop: "10px"}} 
+                          src={URL.createObjectURL(foto)}
+                        ></img> 
+                        </>
+                      : <></>}
+                      </>
+                  }
+                </div>
+              </div>
             </div>
             <button className='save' type="submit">
               {modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Produto'}
@@ -218,6 +277,27 @@ function Produtos() {
               <span>{produto.descricao}</span>
               <span>R$ {formatarReaisSemSimboloString(produto.preco)}</span>
               <div className='acoes'>
+                {produto.foto !== "" && produto.foto !== undefined && produto.foto !== null ? 
+                  <div style={{position: `relative`, alignSelf: 'center'}}>
+                          <button className='botao-icone' type='button' onClick={() => setOpenDropsFoto(openDropsFoto === produto.foto ? "" : produto.foto)}>📷</button>
+                          {openDropsFoto === produto.foto && ( 
+                            <div className='dropdownFunc' style={{
+                              position: `absolute`,
+                              top: `100%`,
+                              right: '15px',
+                              backgroundColor: `#131313`,
+                              boxShadow: `0 2px 8px rgba(49, 49, 49, 0.1)`,
+                              padding: `8px`,
+                              borderRadius: `4px`,
+                              zIndex: `10`,
+                            }}>
+                                <img style={{width: `250px`, height: `250px`}} src={`http://localhost:3000/uploads/`+produto.foto}></img>
+                            </div>
+                          )}
+                        </div>
+                : 
+                  <></>
+                }
                 <button
                   className="editar-cliente botao-icone"
                   style={{ marginLeft: "1rem", cursor: "pointer" }}
@@ -228,6 +308,7 @@ function Produtos() {
                     setModoEdicao(true);
                     setProdutoEditandoId(produto.id ?? null);
                     setNovoProdutoOpen(true);
+                    setFoto(null)
                   }}
                 >
                   ✏️
@@ -249,6 +330,7 @@ function Produtos() {
               />
             )}
     </div>
+    </>
   );
 }
 

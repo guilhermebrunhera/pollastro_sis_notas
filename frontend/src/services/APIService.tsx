@@ -7,6 +7,10 @@ interface Cliente {
     telefone: string;
     endereco: string;
     cpf_cnpj: string;
+    cidade: string;
+    cep: string;
+    contato: string;
+    tel_contato: string
   }
 
 interface Produto {
@@ -14,7 +18,7 @@ interface Produto {
     nome: string;
     descricao: string;
     preco: string;
-    tipo: string
+    tipo: string;
   }
 
   interface Acompanhamentos {
@@ -36,13 +40,7 @@ export async function getClientes() {
 }
 
 export async function postNewCliente(cliente: Cliente){
-    const response = await axios.post(`${API_URL}/clientes`, {
-      nome : cliente.nome, 
-      endereco : cliente.endereco, 
-      telefone : cliente.telefone, 
-      email : cliente.email,
-      cpf_cnpj : cliente.cpf_cnpj
-    })
+    const response = await axios.post(`${API_URL}/clientes`, cliente)
     return response.data
 }
 
@@ -78,16 +76,36 @@ export async function getProdutosID(id: number) {
     return response.data;
 }
 
-export async function postNewProduto(produto: Produto){
+export async function postNewProduto(produto: Produto, foto: File | null){
     produto.preco = produto.preco.replace(".", ``).replace(",", ".");
-    const response = await axios.post(`${API_URL}/produtos`, {nome : produto.nome, preco : produto.preco, descricao : produto.descricao, tipo : produto.tipo})
+
+    const formData = new FormData()
+    formData.append(`nome`, produto.nome)
+    formData.append(`descricao`, produto.descricao)
+    formData.append(`preco`, produto.preco)
+    formData.append(`tipo`, produto.tipo)
+    if(foto) formData.append(`foto`, foto)
+
+    const response = await axios.post(`${API_URL}/produtos`, formData, {headers: {
+        'Content-Type': 'multipart/form-data',
+      }})
     return response.data
 }
 
-export async function putProduto(id: number, produto: Produto) {
+export async function putProduto(id: number, produto: Produto, foto: File | null) {
     try {
       produto.preco = produto.preco.replace(".", ``).replace(",", ".");
-      const response = await axios.put(`${API_URL}/produtos/${id}`, produto);
+
+      const formData = new FormData()
+      formData.append(`nome`, produto.nome)
+      formData.append(`descricao`, produto.descricao)
+      formData.append(`preco`, produto.preco)
+      formData.append(`tipo`, produto.tipo)
+      if(foto) formData.append(`foto`, foto)
+
+      const response = await axios.put(`${API_URL}/produtos/${id}`, formData, {headers: {
+        'Content-Type': 'multipart/form-data',
+      }});
       return response.data;
     } catch (error) {
       console.error("Erro ao editar produto:", error);
@@ -108,6 +126,16 @@ export async function deleteProduto(id: number) {
 export async function changeDescProduto(id: number, descricao: string) {
     try {
       const response = await axios.put(`${API_URL}/produtos/changeDesc/${id}`, {descricao : descricao});
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao editar produto:", error);
+      throw error;
+    }
+}
+
+export async function removeFotoProd(id: number) {
+    try {
+      const response = await axios.delete(`${API_URL}/produtos/removeFoto/${id}`);
       return response.data;
     } catch (error) {
       console.error("Erro ao editar produto:", error);
@@ -198,7 +226,7 @@ export const deleteImageNota = async (id: number) => {
 // ____________________________________________________ HOME ______________________________________//
 
 export const getDadosHome = async () => {
-  const res = await axios.get(`${API_URL}/`);
+  const res = await axios.get(`${API_URL}/home`);
   return res.data;
 };
 
@@ -238,3 +266,8 @@ export async function deleteAcompanhamento(id: number) {
     throw error;
   }
 }
+// _____________________________________________ LOGIN ________________________________//
+export async function loginSistem (nickname: string, senha: string){
+  const res = await axios.post(`${API_URL}/`, {nickname, senha});
+  return res.data;
+};

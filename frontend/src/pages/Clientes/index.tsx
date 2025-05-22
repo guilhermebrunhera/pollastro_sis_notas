@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { deleteCliente, getClientes, postNewCliente, putCliente } from '../../services/APIService'
 import { removerAcentosTexto } from '../../components/utils/utils';
 import Toast from '../../components/Toasts/toasts';
+import Header from '../../components/Header';
 
 interface Cliente {
   id?: number;
@@ -11,6 +12,10 @@ interface Cliente {
   telefone: string;
   endereco: string;
   cpf_cnpj: string;
+  cidade: string;
+  cep: string;
+  contato: string;
+  tel_contato: string
 }
 
 function Clientes() {
@@ -42,7 +47,11 @@ function Clientes() {
     email: "",
     telefone: "",
     endereco: "",
-    cpf_cnpj: ""
+    cpf_cnpj: "",
+    cidade: "",
+    cep: "",
+    contato: "",
+    tel_contato: ""
   });
 
   function formatarTelefone(valor: string) {
@@ -71,12 +80,26 @@ function Clientes() {
     return `${numeros.slice(0, 2)}.${numeros.slice(2, 5)}.${numeros.slice(5, 8)}/${numeros.slice(8, 12)}-${numeros.slice(12, 14)}`;
   }
 
+  function formatarCep(valor: string) {
+    // Remove tudo que não for número
+    const numeros = valor.replace(/\D/g, '');
+  
+    if (numeros.length <= 5) return numeros;
+    if (numeros.length <= 8) return `${numeros.slice(0, 5)}-${numeros.slice(5)}`;
+    
+    return `${numeros.slice(0, 5)}-${numeros.slice(5, 8)}`;
+  }
+
   const handleChangeCliente = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    const novoValor = name === 'telefone'
+    const novoValor = name === 'telefone' || name === "tel_contato"
     ? formatarTelefone(value)
-    : name === 'cpf_cnpj' ? formatarCpfCnpj(value) : value;
+    : 
+    name === 'cpf_cnpj' ? formatarCpfCnpj(value) 
+    : 
+    name === 'cep'? formatarCep(value) :
+    value;
 
     setCliente((prev) => ({
       ...prev,
@@ -87,7 +110,9 @@ function Clientes() {
   const handleSubmitCliente = (e: React.FormEvent) => {
     e.preventDefault();
   
-    if (modoEdicao && clienteEditandoId !== null) {
+    console.log(cliente)
+
+    if (modoEdicao && clienteEditandoId !== null && cliente.id !== undefined && cliente.id !== 0) {
       putCliente(clienteEditandoId, cliente)
         .then(() => {
           setToast({message: "Cliente editado!", type: "Sucesso"})
@@ -100,7 +125,11 @@ function Clientes() {
             email: "",
             telefone: "",
             endereco: "",
-            cpf_cnpj: ""
+            cpf_cnpj: "",
+            cidade: "",
+            cep: "",
+            contato: "",
+            tel_contato: ""
           });
         })
         .catch(err => setToast({message: "Erro ao editar Cliente: " + err, type: "Erro"}));
@@ -117,7 +146,11 @@ function Clientes() {
               email: "",
               telefone: "",
               endereco: "",
-              cpf_cnpj: ""
+              cpf_cnpj: "",
+              cidade: "",
+              cep: "",
+              contato: "",
+              tel_contato: ""
             });
           } else {
             setToast({message: "Erro ao adicionar Cliente" + data, type: "Erro"})
@@ -142,6 +175,8 @@ function Clientes() {
   };
 
   return (
+    <>
+    <Header />
     <div className='content-clientes'>
       <center>
         <button 
@@ -154,7 +189,11 @@ function Clientes() {
                 email: "",
                 endereco: "",
                 telefone: "",
-                cpf_cnpj: ""
+                cpf_cnpj: "",
+                cidade: "",
+                cep: "",
+                contato: "",
+                tel_contato: ""
               }));
             }
           }
@@ -187,34 +226,86 @@ function Clientes() {
                 onChange={handleChangeCliente}
               />
             </div>
-            <div>
-              <label>CPF/CNPJ: (Opcional)</label>
-              <input
-                type="text"
-                name="cpf_cnpj"
-                value={cliente.cpf_cnpj}
-                onChange={handleChangeCliente}
-              />
+            <div style={{width: `100%`, display: `flex`}}>
+              <div style={{width: `50%`, paddingRight: `10px`}}>
+                <label>CPF/CNPJ: (Opcional)</label>
+                <input
+                  type="text"
+                  name="cpf_cnpj"
+                  value={cliente.cpf_cnpj}
+                  onChange={handleChangeCliente}
+                  placeholder='CPF/CNPJ'
+                />
+              </div>
+              <div style={{width: `50%`}}>
+                <label>Telefone:</label>
+                <input
+                  value={cliente.telefone}
+                  onChange={handleChangeCliente}
+                  name="telefone"
+                  type='text'
+                  placeholder='(00) 00000-0000'
+                  required
+                />
+              </div>
+            </div>
+            <br />
+            <h3>Endereço do Cliente</h3>
+            <hr />
+            <div style={{width: `100%`, display: `flex`}}>
+              <div style={{width: `50%`, paddingRight: `10px`}}>
+                <label>Cidade:</label>
+                <input
+                  type="text"
+                  name="cidade"
+                  value={cliente.cidade}
+                  onChange={handleChangeCliente}
+                  required
+                />
+              </div>
+              <div style={{width: `50%`}}>
+                <label>CEP (Opcional):</label>
+                <input
+                  type="text"
+                  name="cep"
+                  value={cliente.cep}
+                  onChange={handleChangeCliente}
+                  placeholder='00000-000'
+                />
+              </div>
             </div>
             <div>
-              <label>Telefone:</label>
-              <input
-                value={cliente.telefone}
-                onChange={handleChangeCliente}
-                name="telefone"
-                type='text'
-                required
-              />
-            </div>
-            <div>
-              <label>Endereço/Cidade:</label>
+              <label>Endereço (Opcional):</label>
               <input
                 type="text"
                 name="endereco"
                 value={cliente.endereco}
                 onChange={handleChangeCliente}
-                required
               />
+            </div>
+            <br />
+            <h3>Contato</h3>
+            <hr />
+            <div style={{width: `100%`, display: `flex`}}>
+              <div style={{width: `50%`, paddingRight: `10px`}}>
+                <label>Nome Contato (Opcional):</label>
+                <input
+                  type="text"
+                  name="contato"
+                  value={cliente.contato}
+                  onChange={handleChangeCliente}
+                />
+              </div>
+              <div style={{width: `50%`}}>
+                <label>Tel. Contato (Opcional):</label>
+                <input
+                  type="text"
+                  name="tel_contato"
+                  value={cliente.tel_contato}
+                  onChange={handleChangeCliente}
+                  placeholder='(00) 00000-0000'
+                />
+              </div>
             </div>
             <button className='save' type="submit">
               {modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Cliente'}
@@ -239,7 +330,7 @@ function Clientes() {
                 {cliente.nome} 
               </span>
               <span>
-                {cliente.endereco}
+                {cliente.cidade}
               </span>
               <div className='acoes'>
                 <button
@@ -271,6 +362,7 @@ function Clientes() {
               />
             )}
     </div>
+    </>
   );
 }
 

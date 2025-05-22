@@ -4,3 +4,8 @@
     padding-right: 10vh;
     width: 100vw;
 }
+
+.div-form-produtos{
+    display: flex;
+    gap: 10%
+}

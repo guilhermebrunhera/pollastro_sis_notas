@@ -15,6 +15,7 @@ app.use(require('./routes/produtos.cjs'));
 app.use(require('./routes/notas.cjs'));
 app.use(require('./routes/home.cjs'));
 app.use(require('./routes/acompanhamento.cjs'));
+app.use(require('./routes/login.cjs'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // app.get('*', (req, res) => {

@@ -23,6 +23,9 @@ interface NotaData {
   desconto_obs: string;
   download: boolean,
   produtos: Produto[];
+  cep: string;
+  contato: string;
+  tel_contato: string
 }
 
 
@@ -87,8 +90,21 @@ export async function gerarNotaPDF(nota: NotaData) {
       drawText(nota.data.split("/")[2], 127, 652, 12);
       drawText(nota.telefone, 220, 652, 12);
       drawText(nota.email, 376, 651, 12);
-      drawText(String(nota.nome), 85, 622);
+      drawText(String(nota.nome), 85, 622, 10);
+
+      if(nota.contato !== "" || nota.tel_contato !== ""){
+        drawText(String(nota.contato) + " - " + String(nota.tel_contato), 368, 623, 10);
+      }
+      
       drawText(nota.cidade, 92, 593);
+
+      if(nota.endereco !== ""){
+        drawText(nota.endereco, 113, 570);
+      }
+
+      if(nota.cep !== ""){
+        drawText(nota.cep, 351, 594);
+      }
 
       switch(nota.numero.length){
         case 1: 
@@ -135,7 +151,10 @@ export async function gerarNotaPDF(nota: NotaData) {
       }
 
       if(nota.desconto > 0){
-        drawText('Desconto: ' + nota.desconto_obs, 82, 92, 10)
+        if(nota.desconto_obs !== "" && nota.desconto_obs !== null && nota.desconto_obs !== undefined){
+          drawText('Desconto: ' + nota.desconto_obs, 82, 92, 10)
+        }
+        
 
         const precoSubTotalWidht = font.widthOfTextAtSize(formatarReaisSemSimboloString(String(total.toFixed(2))), 13 * scale);
         drawTextRight(formatarReaisSemSimboloString(String(total.toFixed(2))), 554, 108, precoSubTotalWidht);

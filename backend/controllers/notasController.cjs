@@ -9,7 +9,11 @@ exports.listarNotas = (req, res) => {
         SELECT 
             notas.id, 
             clientes.nome AS cliente, 
-            clientes.endereco AS endereco, 
+            COALESCE(clientes.endereco, "") AS endereco, 
+            COALESCE(clientes.cidade, "") AS cidade, 
+            COALESCE(clientes.cep, "") AS cep, 
+            COALESCE(clientes.contato, "") AS contato, 
+            COALESCE(clientes.tel_contato, "") AS tel_contato, 
             clientes.telefone AS telefone, 
             COALESCE(clientes.email, '') AS email, 
             data_emissao, 

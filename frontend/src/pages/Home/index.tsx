@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { getDadosHome } from '../../services/APIService'
 import './styles.css'
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
-import { formatarReaisSemSimboloString } from '../../components/utils/utils';
+import { formatarReaisSemSimboloFloat } from '../../components/utils/utils';
+import Header from '../../components/Header';
+import {EyeIcon, EyeOffIcon} from '../../components/utils/eyesIcon';
 
 interface DadosHome {
   countProdutos: number;
@@ -15,6 +17,7 @@ interface DadosHome {
 function Home() {
 
   const [dadosHome, setDadosHome] = useState<DadosHome>()
+  const [showValue, setShowValue] = useState<number | null>(null)
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
   
   useEffect(() => {
@@ -36,8 +39,8 @@ function Home() {
   ];
 
   const dataFinanceiro = [
-    { name: 'Valor à Receber: R$ ' + formatarReaisSemSimboloString(dadosHome?.precoEmProducao ? dadosHome.precoEmProducao : "0"), value: parseFloat(dadosHome?.precoEmProducao ? dadosHome.precoEmProducao : "0") },
-    { name: 'Valor Recebido: R$ ' +  formatarReaisSemSimboloString(dadosHome?.precoFinalizada ? dadosHome.precoFinalizada : "0") , value: parseFloat(dadosHome?.precoFinalizada ? dadosHome.precoFinalizada : "0") },
+    { name: 'Valor à Receber: ', valueBR: formatarReaisSemSimboloFloat(parseFloat(dadosHome?.precoEmProducao ? dadosHome.precoEmProducao : "0")) , value: parseFloat(dadosHome?.precoEmProducao ? dadosHome.precoEmProducao : "0") },
+    { name: 'Valor Recebido: ', valueBR: formatarReaisSemSimboloFloat(parseFloat(dadosHome?.precoFinalizada ? dadosHome.precoFinalizada : "0")) , value: parseFloat(dadosHome?.precoFinalizada ? dadosHome.precoFinalizada : "0") },
   ];
 
   const barData = [
@@ -45,6 +48,8 @@ function Home() {
   ];
 
   return (
+    <>
+    <Header />
     <div className='content-home' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem', padding: '2rem' }}>
       <div style={{height: 400}}>
         <ResponsiveContainer>
@@ -79,26 +84,36 @@ function Home() {
         </ResponsiveContainer>
       </div>
       <div style={{height: 400}}>
-      <ResponsiveContainer>
+        <ResponsiveContainer>
           <PieChart>
             <Pie
               data={dataFinanceiro}
               dataKey="value"
-              nameKey="name"
               cx="50%"
               cy="50%"
               outerRadius={100}
               fill="#8884d8"
+              label={false}
+
             >
               {dataFinanceiro.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Legend />
           </PieChart>
         </ResponsiveContainer>
+        <div style={{display: `grid`, gap:"0.5rem", alignItems: `center`, paddingTop: 0, marginTop: 0}}>
+              {dataFinanceiro.map((_, index) => (
+                
+                <div className="legend-box" style={{gap: `0.5rem`}}>
+                  <div className='legend-dot' style={{backgroundColor: COLORS[index % COLORS.length]}}></div>
+                  <span style={{color: COLORS[index % COLORS.length]}} >{_.name}{showValue === index ? `R$ `+_.valueBR : `R$ *******`} <button type='button' className='botao-icone' onClick={() => setShowValue(showValue === index ? null : index)}>{showValue === index ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}</button></span>
+                </div>
+              ))}
+          </div>
       </div>
     </div>
+    </>
   )
 }
 
