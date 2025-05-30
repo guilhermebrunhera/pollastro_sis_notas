@@ -54,17 +54,27 @@ function Clientes() {
     tel_contato: ""
   });
 
-  function formatarTelefone(valor: string) {
+  function formatarTelefone(valor: string): string {
     // Remove tudo que não for número
     const numeros = valor.replace(/\D/g, '');
-  
-    // Aplica a máscara (99) 9 9999-9999
-    if (numeros.length <= 2) return `(${numeros}`;
-    if (numeros.length <= 3) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
-    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)}${numeros.slice(3)}`;
-    if (numeros.length <= 11) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)}${numeros.slice(3, 7)}-${numeros.slice(7)}`;
-    
-    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(3, 7)}-${numeros.slice(7, 11)}`;
+
+    if (numeros.length === 0) return '';
+
+    if (numeros.length <= 2) {
+      return `(${numeros}`;
+    }
+
+    if (numeros.length <= 6) {
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    }
+
+    if (numeros.length <= 10) {
+      // Telefone fixo: (99) 1234-5678
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
+    }
+
+    // Celular com 9 dígitos: (99) 91234-5678
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
   }
 
   function formatarCpfCnpj(valor: string) {

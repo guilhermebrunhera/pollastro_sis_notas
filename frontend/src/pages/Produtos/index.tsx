@@ -298,6 +298,19 @@ function Produtos() {
                 : 
                   <></>
                 }
+                <button 
+                  className='botao-icone'
+                  onClick={
+                    () => {
+                      setNovoProdutoOpen(!novoProdutoOpen);
+                      setProduto({ nome: produto.nome, descricao: produto.descricao, preco: formatarReaisSemSimboloString(produto.preco), tipo: produto.tipo, foto: "" });
+                      setFoto(null)
+                    }
+                  }
+                  title='Copiar Produto'
+                >
+                ➕
+                </button>
                 <button
                   className="editar-cliente botao-icone"
                   style={{ marginLeft: "1rem", cursor: "pointer" }}
