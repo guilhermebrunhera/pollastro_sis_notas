@@ -14,7 +14,7 @@ import {
   getNotaID,
   changeDescProduto
 } from '../../services/APIService';
-import { format } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { gerarNotaPDF } from '../../components/notaPdfGenerator'
 import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString, removerAcentosTexto } from '../../components/utils/utils';
 import { gerarPedidoPDF } from '../../components/pedidoPdfGenerator';
@@ -98,6 +98,7 @@ function Notas() {
   const [termoFiltro, setTermoFiltro] = useState('');
   const [openDrops, setOpenDrops] = useState<number | null>(null);
   const [openDropsFoto, setOpenDropsFoto] = useState<string | undefined>(undefined);
+  const [mes, setMes] = useState<string | null>(format(new Date(), `yyyy-MM`));
   const dropsRef = useRef(null);
 
   const [nota, setNota] = useState<Nota>({
@@ -128,6 +129,10 @@ function Notas() {
   }, []);
 
   useEffect(() => {
+    carregarDados();
+  }, [mes]);
+
+  useEffect(() => {
     const notaSalva = localStorage.getItem('notaFormulario');
     const modoEdicaoSalvo = localStorage.getItem('notaModoEdicao');
     const notaEditandoIdSalvo = localStorage.getItem('notaEditandoId');
@@ -143,6 +148,7 @@ function Notas() {
       setNotaEditandoId(JSON.parse(notaEditandoIdSalvo));
     }
 
+    setMes(format(new Date(), `yyyy-MM`))
     carregarDados();
     setDesconto(0);
   }, []);
@@ -170,7 +176,7 @@ function Notas() {
       const [clientesData, produtosData, notasData] = await Promise.all([
         getClientes(),
         getProdutos(),
-        getNotas()
+        getNotas(mes)
       ]);
       setClientes(clientesData);
       setProdutos(produtosData);
@@ -207,8 +213,10 @@ function Notas() {
           ...novosItens[index], 
           produto_id: value as number,
           preco_unitario: produtoSelecionado.preco,
-          descricaoChange: produtoSelecionado.descricao
+          descricaoChange: produtoSelecionado.descricao,
+          centavos: produtoSelecionado.preco
         };
+        
       }
     } else if (field === 'preco_unitario') {
       let valorNumerico = typeof value === 'string'
@@ -415,7 +423,8 @@ function Notas() {
             produtos: data,
             contato: String(nota.contato ? nota.contato : ""),
             cep: String(nota.cep ? nota.cep : ""),
-            tel_contato: String(nota.tel_contato ? nota.tel_contato : "")
+            tel_contato: String(nota.tel_contato ? nota.tel_contato : ""),
+            nota_status: nota.status
           }
         )
         if (!download){
@@ -451,6 +460,24 @@ function Notas() {
         setOpenDrops(null);
       })
       .catch(err => { console.error(err)})
+  }
+
+  async function handleMesFiltro(filtroMes: string){
+    const dataAtual = new Date();
+    const mesAtual = format(dataAtual, "yyyy-MM");
+    const mesAnterior = format(subMonths(dataAtual, 1), "yyyy-MM");
+
+    switch (filtroMes) {
+      case "EM":
+        setMes(mesAtual);
+        break;
+      case "MP":
+        setMes(mesAnterior);
+        break;
+      case "LT":
+        setMes(null);
+        break;
+    }
   }
 
   return (
@@ -558,6 +585,7 @@ function Notas() {
                       placeholder='Descrição do serviço'
                       onChange={(e) => handleChangeDescProdutoServico(item.produto_id, index, e)} 
                       value={item.descricaoChange}
+                      maxLength={35}
                     />
                   </>
                 ) : (
@@ -649,7 +677,7 @@ function Notas() {
                         type="text"
                         placeholder="Preço (Produto)"
                         value={
-                          formatarReaisSemSimboloFloat(item.quantidade === 0 ? 0 : item.preco_unitario)
+                          formatarReaisSemSimboloFloat(item.preco_unitario)
                         }
                         onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
                         disabled={true}
@@ -740,14 +768,28 @@ function Notas() {
         </div>
       ) : (
         <div style={{ maxWidth: '80%', margin: '0 auto' }}>
-          <h3>Filtro:</h3>
-          <input
-            type="text"
-            placeholder="Filtrar clientes, nº nota, data..."
-            value={termoFiltro}
-            onChange={(e) => setTermoFiltro(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-          /><br />
+          
+          <h3>Filtros:</h3>
+          <div style={{width: `100%`, display: "flex", gap: `10px`}}>
+            <div style={{width: `80%`}}>
+              <input
+                type="text"
+                placeholder="Filtrar clientes, nº nota, data..."
+                value={termoFiltro}
+                onChange={(e) => setTermoFiltro(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
+              />
+            </div>
+            <div style={{width: `20%`}}>
+              <select style={{textAlign: `center`}} onChange={(e) => handleMesFiltro(e.target.value)}>
+                <option value={`EM`}>Este Mês</option>
+                <option value={`MP`}>Mês Passado</option>
+                <option value={`LT`}>Listar Todos</option>
+              </select>
+            </div>
+          </div>
+          
+          <br />
           <h2>Pedidos:</h2>
           <ul>
             {clientesFiltrados.map(nota => (

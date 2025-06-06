@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { formatarReaisSemSimboloString } from "./utils/utils"
-import backgroundImage from '../assets/BLOCO_PEDIDO_POLLASTRO_CUT_NEW.png'; // use a imagem limpa sem escrita
+import backgroundImage from '../assets/BLOCO_PEDIDO_POLLASTRO_CUT_NEW.png';
+import backgroundImagePaga from '../assets/BLOCO_PEDIDO_POLLASTRO_CUT_NEW_PAGO.png';
 import { saveAs } from 'file-saver';
 
 interface Produto {
@@ -25,7 +26,8 @@ interface NotaData {
   produtos: Produto[];
   cep: string;
   contato: string;
-  tel_contato: string
+  tel_contato: string;
+  nota_status: string;
 }
 
 
@@ -33,9 +35,18 @@ interface NotaData {
 export async function gerarNotaPDF(nota: NotaData) {
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([842, 595]); // A4 horizontal
-  
-    const bgImageBytes = await fetch(backgroundImage).then(res => res.arrayBuffer());
-    const bgImage = await pdfDoc.embedPng(bgImageBytes);
+
+    let bgImageBytes = null;
+    let bgImage = null;
+
+    if(nota.nota_status === "Paga"){
+      bgImageBytes = await fetch(backgroundImagePaga).then(res => res.arrayBuffer());
+      bgImage = await pdfDoc.embedPng(bgImageBytes);
+    }else{
+      bgImageBytes = await fetch(backgroundImage).then(res => res.arrayBuffer());
+      bgImage = await pdfDoc.embedPng(bgImageBytes);
+    }
+    
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     

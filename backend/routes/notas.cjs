@@ -3,8 +3,8 @@ const router = express.Router();
 const controller = require('../controllers/notasController.cjs');
 
 // Rotas para notas de serviço
-router.get('/notas', controller.listarNotas);
-router.get('/notas/:id', controller.detalharNota);
+router.get('/notas/:mes', controller.listarNotas);
+router.get('/notas/id/:id', controller.detalharNota);
 router.put('/notas/:id', controller.atualizarNota);
 router.post('/notas', controller.criarNota);
 router.delete('/notas/:id', controller.deletarNota);

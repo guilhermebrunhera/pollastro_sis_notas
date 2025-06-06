@@ -5,7 +5,12 @@ const fs = require('fs');
 
 // Listar todas as notas (sem itens)
 exports.listarNotas = (req, res) => {
-    const sql = `
+    const mes = req.params.mes;
+
+    console.log(mes + " - " + typeof(mes))
+
+    if(mes === null || mes === `null`){
+        const sql = `
         SELECT 
             notas.id, 
             clientes.nome AS cliente, 
@@ -32,11 +37,48 @@ exports.listarNotas = (req, res) => {
             notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
         ORDER BY 
             notas.id DESC
-    `;
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
+        `;
+        db.query(sql, (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            res.json(results);
+        });
+    } else {
+        const sql = `
+        SELECT 
+            notas.id, 
+            clientes.nome AS cliente, 
+            COALESCE(clientes.endereco, "") AS endereco, 
+            COALESCE(clientes.cidade, "") AS cidade, 
+            COALESCE(clientes.cep, "") AS cep, 
+            COALESCE(clientes.contato, "") AS contato, 
+            COALESCE(clientes.tel_contato, "") AS tel_contato, 
+            clientes.telefone AS telefone, 
+            COALESCE(clientes.email, '') AS email, 
+            data_emissao, 
+            status,
+            COALESCE(notas.observacoes, "") AS observacoes,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
+            notas.desconto as desconto,
+            SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
+            notas.desconto_obs,
+            notas.nota_impressa
+        FROM 
+            notas
+            JOIN clientes ON notas.cliente_id = clientes.id
+            JOIN nota_itens ON notas.id = nota_itens.nota_id
+        WHERE
+            DATE_FORMAT(data_emissao, '%Y-%m') = ?
+        GROUP BY
+            notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
+        ORDER BY 
+            notas.id DESC
+        `;
+        db.query(sql, [mes], (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            res.json(results);
+        });
+    }
+    
 };
 
 
@@ -92,10 +134,12 @@ exports.detalharNota = (req, res) => {
     `;
 
     db.query(notaQuery, [id], (err, notaResult) => {
+        console.log(1, err)
         if (err) return res.status(500).json({ error: err });
         if (notaResult.length === 0) return res.status(404).json({ error: 'Nota não encontrada' });
 
         db.query(itensQuery, [id], (err2, itensResult) => {
+            console.log(2, err2)
             if (err2) return res.status(500).json({ error: err2 });
             res.json({
                 nota: notaResult[0],
@@ -114,8 +158,8 @@ exports.criarNota = (req, res) => {
         if (err) return res.status(500).json({ error: err });
         const notaId = result.insertId;
 
-        const itensSQL = 'INSERT INTO nota_itens (nota_id, produto_id, quantidade, preco_unitario) VALUES ?';
-        const valores = itens.map(i => [notaId, i.produto_id, i.quantidade, i.preco_unitario]);
+        const itensSQL = 'INSERT INTO nota_itens (nota_id, produto_id, quantidade, preco_unitario, descricao_servico) VALUES ?';
+        const valores = itens.map(i => [notaId, i.produto_id, i.quantidade, i.preco_unitario, i.descricaoChange]);
 
         db.query(itensSQL, [valores], (err2) => {
             if (err2) return res.status(500).json({ error: err2 });
@@ -143,7 +187,7 @@ exports.atualizarNota = (req, res) => {
             if (err2) return res.status(500).json({ error: err2 });
 
             const insertItensSQL = `
-                INSERT INTO nota_itens (nota_id, produto_id, quantidade, preco_unitario)
+                INSERT INTO nota_itens (nota_id, produto_id, quantidade, preco_unitario, descricao_servico)
                 VALUES ?
             `;
 
@@ -151,7 +195,8 @@ exports.atualizarNota = (req, res) => {
                 notaId,
                 item.produto_id,
                 item.quantidade,
-                item.preco_unitario
+                item.preco_unitario,
+                item.descricaoChange
             ]);
 
             db.query(insertItensSQL, [valores], (err3) => {

@@ -17,7 +17,17 @@ exports.buscarProdutoPorId = (req, res) => {
     db.query(`SELECT 
 	nota_itens.preco_unitario as preco_unitario,
 	nota_itens.quantidade as quantidade,
-	CONCAT(produtos.nome, IF(produtos.descricao != '', CONCAT(' - ', produtos.descricao), '')) as nome,
+	CONCAT(
+		produtos.nome, 
+        IF(
+			produtos.descricao != '',
+            IF(
+				(produtos.tipo = 'S' AND nota_itens.descricao_servico IS NOT NULL), 
+                CONCAT(' - ', nota_itens.descricao_servico), 
+                CONCAT(' - ', produtos.descricao)
+			), ""
+		)
+	) as nome,
     (nota_itens.preco_unitario * nota_itens.quantidade) as preco_total,
     produtos.tipo,
     COALESCE(produtos.foto, '') as foto

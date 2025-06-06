@@ -145,13 +145,13 @@ export async function removeFotoProd(id: number) {
 
 // ____________________________________________________ NOTAS ______________________________________//
 
-export const getNotas = async () => {
-    const res = await axios.get(`${API_URL}/notas`);
+export const getNotas = async (mes: string | null | undefined) => {
+    const res = await axios.get(`${API_URL}/notas/${mes}`);
     return res.data;
 };
 
 export async function getNotaID(id: number) {
-  const response = await axios.get(`${API_URL}/notas/${id}`);
+  const response = await axios.get(`${API_URL}/notas/id/${id}`);
   return response.data;
 }
 
