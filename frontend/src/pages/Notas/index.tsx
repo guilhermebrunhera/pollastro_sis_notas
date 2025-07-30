@@ -22,6 +22,9 @@ import ModalUploadImagens from '../../components/utils/modalImagens';
 import Toast from '../../components/Toasts/toasts';
 import Header from '../../components/Header';
 import { MdApps } from 'react-icons/md';
+import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
+// import ModalPagamentos from './modalPagamentos';
+
 
 interface Cliente {
   id: number;
@@ -57,7 +60,7 @@ interface Nota {
   cliente_id: number;
   data_emissao: string;
   observacoes: string;
-  status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
+  status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
   itens: NotaItem[];
   cliente?: string;
   endereco?: string;
@@ -99,7 +102,11 @@ function Notas() {
   const [openDrops, setOpenDrops] = useState<number | null>(null);
   const [openDropsFoto, setOpenDropsFoto] = useState<string | undefined>(undefined);
   const [mes, setMes] = useState<string | null>(format(new Date(), `yyyy-MM`));
+  const [valorTotalNota, setValorTotalNota] = useState<number>();
   const dropsRef = useRef(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [showHeaders, setShowHeaders] = useState(true);
+  const [modalAberto, setModalAberto] = useState(false)
 
   const [nota, setNota] = useState<Nota>({
     id: 0,
@@ -127,6 +134,21 @@ function Notas() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setScrolled(true);
+      } else {
+        setScrolled(false)
+        setShowHeaders(true)
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled, showHeaders]);
 
   useEffect(() => {
     carregarDados();
@@ -169,7 +191,27 @@ function Notas() {
       localStorage.setItem('notaModoEdicao', JSON.stringify(modoEdicao));
       localStorage.setItem('notaEditandoId', JSON.stringify(notaEditandoId));
     }
+
   }, [nota, modoEdicao, notaEditandoId]);
+
+  useEffect(() => {
+    verifyValorNotaTotal();
+  }, [nota.itens, desconto])
+
+  const verifyValorNotaTotal = () => {
+    let valorTotal = 0;
+    if(nota.itens.length != 0){
+      nota.itens.map(prod => {
+        valorTotal += (prod.quantidade === null ? 0 : prod.quantidade * prod.preco_unitario)
+      })
+    }
+
+    if(desconto != 0){
+      valorTotal -= (desconto / 100);
+    }
+
+    setValorTotalNota(valorTotal);
+  }
 
   const carregarDados = async () => {
     try {
@@ -308,6 +350,8 @@ function Notas() {
     getNotaID(id).then((data) => {
       let notaData = data.nota;
       let notaItens = data.itens;
+      
+      console.log(notaData.desconto)
 
       setNota({
         id: id,
@@ -319,6 +363,7 @@ function Notas() {
         status: notaData.status,
         itens: notaItens || []
       });
+      setDesconto(notaData.desconto * 100)
       setModoEdicao(true);
       setNotaEditandoId(id);
       setNovaNotaOpen(true);
@@ -447,7 +492,7 @@ function Notas() {
             nome : nota.cliente ? nota.cliente : "",
             numero: String(nota.id),
             data: format(nota.data_emissao, "dd/MM/yy"),
-            cidade: String(nota.endereco),
+            cidade: String(nota.cidade),
             telefone: String(nota.telefone) ,
             email: String(nota.email),
             endereco: String(nota.endereco),
@@ -485,33 +530,69 @@ function Notas() {
     <Header />
     <div className="content-clientes">
       <center>
-        <button className="default" onClick={() => {
-          setNovaNotaOpen(!novaNotaOpen);
-          setModoEdicao(false);
-          setDesconto(0);
-          setNota({
-            id:0,
-            cliente_id: 0,
-            data_emissao: new Date().toISOString().split('T')[0], // Data do dia
-            observacoes: '',
-            status: 'Producao', // Status padrão
-            itens: [{produto_id: 0, quantidade: 0, preco_unitario: 0}],
-            desconto: 0,
-            desconto_obs: ""
-          });
-          localStorage.removeItem('notaFormulario');
-          localStorage.removeItem('notaModoEdicao');
-          localStorage.removeItem('notaEditandoId');
-        }}>
-          {novaNotaOpen ? modoEdicao? "Cancelar Edição" :'Cancelar Pedido' : '+ Novo Pedido'}
-        </button>
+        <div className={showHeaders ? scrolled ? "div-background-header scrolled show" : "div-background-header show" : "div-background-header hide" }>
+          <button className="default bt-header" onClick={() => {
+            setNovaNotaOpen(!novaNotaOpen);
+            setModoEdicao(false);
+            setDesconto(0);
+            setNota({
+              id:0,
+              cliente_id: 0,
+              data_emissao: new Date().toISOString().split('T')[0], // Data do dia
+              observacoes: '',
+              status: 'Producao', // Status padrão
+              itens: [{produto_id: 0, quantidade: 0, preco_unitario: 0}],
+              desconto: 0,
+              desconto_obs: ""
+            });
+            localStorage.removeItem('notaFormulario');
+            localStorage.removeItem('notaModoEdicao');
+            localStorage.removeItem('notaEditandoId');
+          }}>
+            {novaNotaOpen ? modoEdicao? "Cancelar Edição" :'Cancelar Pedido' : '+ Novo Pedido'}
+          </button>
+          {!novaNotaOpen && !modoEdicao ?
+
+            <div style={{width: `80%`, display: "flex", gap: `10px`, alignItems: 'center', justifyContent: "center"}}>
+            <div style={{width: `80%`}}>
+              <input
+                type="text"
+                placeholder="Filtrar clientes, nº nota, data..."
+                value={termoFiltro}
+                onChange={(e) => setTermoFiltro(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div style={{width: `20%`}}>
+              <select style={{textAlign: `center`}} onChange={(e) => handleMesFiltro(e.target.value)}>
+                <option value={`EM`}>Este Mês</option>
+                <option value={`MP`}>Mês Passado</option>
+                <option value={`LT`}>Listar Todos</option>
+              </select>
+            </div>
+          </div>
+          :<></>
+
+          }
+        </div>
+        {scrolled && !novaNotaOpen && !modoEdicao ? 
+          <button 
+            className={showHeaders ? "buttonShowHeaders" : "buttonShowHeadersTop"} 
+            onClick={() => setShowHeaders(!showHeaders)}
+          >            
+            {showHeaders ? <FaAngleUp></FaAngleUp> : <FaAngleDown></FaAngleDown>}
+          </button>
+        :
+          <></>
+        }
       </center>
 
       {novaNotaOpen ? (
-        <div className="div-form-clientes" style={{ maxWidth: '80%', margin: '0 auto' }}>
+        <div className="div-form-clientes" style={{ maxWidth: '80%', margin: '0 auto', paddingTop: `7rem` }}>
           <h2>{modoEdicao ? 'Editar Pedido' : 'Novo Pedido'}</h2>
           <form onSubmit={handleSubmitNota}>
             <div style={{width: `100%`, display: `flex`, gap: `0.5rem`, alignItems: `center`}}>
+              {/* <div style={{display: 'flex', width: `100%`}}><ModalPagamentos notaId={notaEditandoId ? notaEditandoId : 0} onClose={() => {console.log("fumegou")}}></ModalPagamentos></div> */}
               <div style={{width: `70%`}}>
                 <label>Cliente:</label>
                 <Select
@@ -562,12 +643,14 @@ function Notas() {
             <label>Status:</label>
             <select
               value={nota.status}
-              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' }))}
+              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue' }))}
             >
               <option value="">-- Selecione --</option>
+              <option value="Orcamento">Orçamento</option>
               <option value="Producao">Em Produçao</option>
               <option value="Cancelada">Cancelado</option>
               <option value="Finalizada">Finalizado</option>
+              <option value="Entregue">Entregue</option>
               <option value="Paga">Pago</option>
             </select>
             <br/>
@@ -582,6 +665,7 @@ function Notas() {
                   <>
                     <h3>{produtos.find(p => p.id === item.produto_id)?.nome}</h3>
                     <input 
+                      style={{width: `24.8rem`}}
                       placeholder='Descrição do serviço'
                       onChange={(e) => handleChangeDescProdutoServico(item.produto_id, index, e)} 
                       value={item.descricaoChange}
@@ -667,13 +751,13 @@ function Notas() {
                           handleChangeValorProduto(e, index);
                           handleItemChange(index, `preco_unitario`, (item.centavos ? item.centavos : 0) / 10)
                         }}
-                        style={{ maxWidth: "200px", fontSize: "16px", padding: "4px" }}
+                        style={{ maxWidth: "22.5rem", fontSize: "16px", padding: "4px", textAlign: `end`, paddingRight: `0.5rem` }}
                       />
                     );
                   } else {
                     return (
                       <input
-                        style={{ maxWidth: '30%' }}
+                        style={{ maxWidth: '30%',textAlign: `end`, paddingRight: `0.5rem` }}
                         type="text"
                         placeholder="Preço (Produto)"
                         value={
@@ -719,6 +803,23 @@ function Notas() {
                 })()}
               </div>
             ))}
+            <div style={{display: `flex`, gap: `0.5rem`, width: `100%`, paddingLeft: `49.5%`, alignItems: `center`}}>
+              <label>Total do Pedido:</label>
+              <div>
+                <input 
+                  style={{width: `22.6rem`, textAlign: `end`, paddingRight: `0.5rem`}}
+                  value={formatarReaisSemSimboloFloat(valorTotalNota ?? 0)}
+                  disabled
+                />
+              </div>
+            </div>
+            <br></br>
+            <div style={{display: 'flex', width: `100%`, alignItems: 'center', paddingLeft: `61.5%`, paddingRight: `8.3%`}}>
+              <button type="button" className='default-form' onClick={() => handleHasQtdProdutos(true)}>+ Produto</button>
+            </div>
+            <br />
+            <hr /> 
+            <br />
             {(() => {
                 const hasProduto = nota.itens.length > 0;
                 if(hasProduto){
@@ -759,7 +860,7 @@ function Notas() {
                   )
                 }
             })()}
-            <button type="button" className='default-form' onClick={() => handleHasQtdProdutos(true)}>+ Produto</button>
+            
 
             <button className="save" type='button' onClick={() => handleHasQtdProdutos(false)}>{modoEdicao ? 'Salvar Alterações' : 'Salvar Novo Pedido'}</button>
             <button className="save" hidden ref={buttonSubmitRef} type="submit"></button>
@@ -767,31 +868,19 @@ function Notas() {
           </form>
         </div>
       ) : (
-        <div style={{ maxWidth: '80%', margin: '0 auto' }}>
-          
-          <h3>Filtros:</h3>
-          <div style={{width: `100%`, display: "flex", gap: `10px`}}>
-            <div style={{width: `80%`}}>
-              <input
-                type="text"
-                placeholder="Filtrar clientes, nº nota, data..."
-                value={termoFiltro}
-                onChange={(e) => setTermoFiltro(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-              />
-            </div>
-            <div style={{width: `20%`}}>
-              <select style={{textAlign: `center`}} onChange={(e) => handleMesFiltro(e.target.value)}>
-                <option value={`EM`}>Este Mês</option>
-                <option value={`MP`}>Mês Passado</option>
-                <option value={`LT`}>Listar Todos</option>
-              </select>
-            </div>
-          </div>
+        <div style={{ maxWidth: '80%', margin: '0 auto', paddingTop: `8rem` }}>
           
           <br />
           <h2>Pedidos:</h2>
           <ul>
+            {
+              clientesFiltrados.length === 0 ?
+              <div style={{width: `100%`, textAlign: `center`}}>
+                <h2>Nenhum Pedido encontrado, tente outro filtro.</h2>
+              </div>
+              :
+              <></>
+            }
             {clientesFiltrados.map(nota => (
               <li key={nota.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{maxWidth: "8%"}}>Pedido {nota.id}</span>
@@ -805,7 +894,7 @@ function Notas() {
                   <select
                     value={nota.status}
                     onChange={async (e) => {
-                      const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga';
+                      const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
                       try {
                         await alterStatusNota(nota.id!, novoStatus);
                         setToast({message: "Status da nota atualizado com Sucesso!", type: "Sucesso"})
@@ -817,6 +906,7 @@ function Notas() {
                       }
                     }}
                   >
+                    <option value="Orcamento">Orçamento</option>
                     <option value="Producao">Em Produção</option>
                     <option value="Cancelada">Cancelado</option>
                     <option value="Finalizada">Finalizado</option>
@@ -844,7 +934,12 @@ function Notas() {
                           {nota.status === "Producao" ? <button title='Imprimir Serviço' className='botao-icone' onClick={() => carregarPedidoParaPDF(nota.id!, nota)}>📋</button> : <></>}
                           <button title='Imprimir' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, false)}>📑</button>
                           <button title='Download' className='botao-icone' onClick={() => carregarNotaParaPDF(nota.id!, nota, true)}>📥</button>
-                          <ModalUploadImagens notaId={nota.id}/>
+                          <span onClick={() => {  }}>
+                              <ModalUploadImagens notaId={nota.id} aberto={modalAberto} onFechar={() => {
+                                setModalAberto(false);
+                                
+                            }} />
+                          </span>
                           {nota.status !== "Paga" ? <button title='Editar' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
                           {nota.status !== "Finalizada" && nota.status !== "Paga" && (!nota.nota_impressa || nota.status === `Cancelada`) ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>} 
                       </div>
