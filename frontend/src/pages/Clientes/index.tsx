@@ -4,6 +4,8 @@ import { deleteCliente, getClientes, postNewCliente, putCliente } from '../../se
 import { removerAcentosTexto } from '../../components/utils/utils';
 import Toast from '../../components/Toasts/toasts';
 import Header from '../../components/Header';
+import RelatorioModal from './relatorioPedidos';
+import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
 
 interface Cliente {
   id?: number;
@@ -26,10 +28,28 @@ function Clientes() {
   const [clienteEditandoId, setClienteEditandoId] = useState<number | null>(null);
   const [termoFiltro, setTermoFiltro] = useState('');
   const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
+  const [relatorioPedidos, setOpenRelatorioPedidos] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showHeaders, setShowHeaders] = useState(true);
 
   useEffect(() => {
     listarClientes();
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setScrolled(true);
+      } else {
+        setScrolled(false)
+        setShowHeaders(true)
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
   
   function listarClientes() {
     getClientes()
@@ -120,7 +140,6 @@ function Clientes() {
   const handleSubmitCliente = (e: React.FormEvent) => {
     e.preventDefault();
   
-    console.log(cliente)
 
     if (modoEdicao && clienteEditandoId !== null && cliente.id !== undefined && cliente.id !== 0) {
       putCliente(clienteEditandoId, cliente)
@@ -188,33 +207,62 @@ function Clientes() {
     <>
     <Header />
     <div className='content-clientes'>
-      <center>
-        <button 
-          className='default' 
-          onClick={
-            () => {
-              setNovoClienteOpen(!novoClienteOpen)
-              setCliente(() => ({
-                nome : "",
-                email: "",
-                endereco: "",
-                telefone: "",
-                cpf_cnpj: "",
-                cidade: "",
-                cep: "",
-                contato: "",
-                tel_contato: ""
-              }));
+      <center >
+        <div className={showHeaders ? scrolled ? "div-background-header scrolled show" : "div-background-header show" : "div-background-header hide" }>
+          <button 
+            className='default' 
+            onClick={
+              () => {
+                setNovoClienteOpen(!novoClienteOpen)
+                setCliente(() => ({
+                  nome : "",
+                  email: "",
+                  endereco: "",
+                  telefone: "",
+                  cpf_cnpj: "",
+                  cidade: "",
+                  cep: "",
+                  contato: "",
+                  tel_contato: ""
+                }));
+              }
             }
+          >
+            {novoClienteOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Cliente'}
+          </button>
+          {!novoClienteOpen && !modoEdicao ?
+            <input
+              type="text"
+              className='input-filtro'
+              placeholder="Filtrar clientes..."
+              value={termoFiltro}
+              onChange={(e) => setTermoFiltro(e.target.value)}
+              style={{ padding: '0.5rem', marginBottom: '1rem' }}
+            />
+            : <></>
           }
-        >
-          {novoClienteOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Cliente'}
-        </button>
+          
+        </div>
+        {scrolled && !novoClienteOpen && !modoEdicao ? 
+          <button 
+            className={showHeaders ? "buttonShowHeaders" : "buttonShowHeadersTop"} 
+            onClick={() => setShowHeaders(!showHeaders)}
+          >            
+            {showHeaders ? <FaAngleUp></FaAngleUp> : <FaAngleDown></FaAngleDown>}
+          </button>
+        :
+          <></>
+        }
       </center>
       
+      <RelatorioModal 
+          relatorioPedidos={relatorioPedidos}
+          onClose={() =>setOpenRelatorioPedidos(false)}
+          cliente={cliente}
+      ></RelatorioModal>
 
       {novoClienteOpen ? 
-        <div className='div-form-clientes' style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <div className='div-form-clientes' style={{ maxWidth: "80%", margin: "0 auto", paddingTop: `7rem` }}>
           <h2>Cadastrar Novo Cliente</h2>
           <form onSubmit={handleSubmitCliente}>
             <div>
@@ -323,17 +371,17 @@ function Clientes() {
           </form>
         </div>
       :
-      <div style={{ maxWidth: "80%", margin: "0 auto" }}>
-        <h3>Filtro:</h3>
-        <input
-          type="text"
-          placeholder="Filtrar clientes..."
-          value={termoFiltro}
-          onChange={(e) => setTermoFiltro(e.target.value)}
-          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-        />
+      <div style={{ maxWidth: "80%", margin: "0 auto", paddingTop: `11rem` }}>
         <h2>Lista de Clientes</h2>
         <ul>
+          {
+            clientesFiltrados.length === 0 ?
+            <div style={{width: `100%`, textAlign: `center`}}>
+              <h2>Nenhum Cliente encontrado, tente outro filtro.</h2>
+            </div>
+            :
+            <></>
+          }
           {clientesFiltrados.map((cliente) => (
             <li key={cliente.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>
@@ -343,6 +391,12 @@ function Clientes() {
                 {cliente.cidade}
               </span>
               <div className='acoes'>
+                <button className="botao-icone" title='Relatório de Pedidos' onClick={() => {
+                  setOpenRelatorioPedidos(!relatorioPedidos)
+                  setCliente(cliente)
+                }}>
+                  📋
+                </button>
                 <button
                   className="editar-cliente botao-icone"
                   style={{ marginLeft: "1rem", cursor: "pointer" }}
@@ -358,6 +412,7 @@ function Clientes() {
                 <button className="botao-icone" onClick={() => excluirCliente(cliente.id ? cliente.id : 0)}>
                   🗑️
                 </button>
+                
               </div>
             </li>
           ))}

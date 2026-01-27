@@ -30,12 +30,25 @@ interface Produto {
     produto: Produto
   }
 
+  interface Pagamentos {
+    id?: number,
+    notaId: number,
+    valorPago: number,
+    observacao: string,
+    dataPagamento: string,
+    pago: boolean
+  }
+
 const API_URL = "http://localhost:3000";
 
 // ____________________________________________________ CLIENTES ______________________________________//
 
 export async function getClientes() {
     const response = await axios.get(`${API_URL}/clientes`);
+    return response.data;
+}
+export async function BuscarPedidosCliente(id: number, dataFim: string, dataInicio: string, status: string) {
+    const response = await axios.post(`${API_URL}/clientes/pedidos/${id}`, {dataFim, dataInicio, status});
     return response.data;
 }
 
@@ -230,6 +243,11 @@ export const getDadosHome = async () => {
   return res.data;
 };
 
+export const getPedidosVencidos = async () => {
+  const res = await axios.get(`${API_URL}/pedidos_vencidos`);
+  return res.data;
+};
+
 // __________________________________________________  ACOMPANHAMENTOS ______________________________//
 
 export async function getAcompanhamentos() {
@@ -271,3 +289,41 @@ export async function loginSistem (nickname: string, senha: string){
   const res = await axios.post(`${API_URL}/`, {nickname, senha});
   return res.data;
 };
+
+//______________________________________________Pagamentos __________________________//
+
+export async function getPagamentos(notaId: number) {
+    const response = await axios.get(`${API_URL}/pagamentos/${notaId}`);
+    return response.data;
+}
+
+export async function getPagamentoID(id: number, notaId: number) {
+    const response = await axios.get(`${API_URL}/pagamentos/${notaId}/${id}`);
+    return response.data;
+}
+
+export async function postListaPagamentos(pagamentos: Pagamentos[], notaId: number){
+
+    const response = await axios.post(`${API_URL}/pagamentos/${notaId}`, pagamentos)
+    return response.data
+}
+
+// export async function putPagamento(id: number, pagamento: Pagamentos, notaId: number) {
+//     try {
+//       const response = await axios.put(`${API_URL}/pagamentos/${notaId}/${id}`, pagamento);
+//       return response.data;
+//     } catch (error) {
+//       console.error("Erro ao editar pagamento:", error);
+//       throw error;
+//     }
+// }
+
+export async function deletePagamento(id: number) {
+    try {
+      const response = await axios.delete(`${API_URL}/pagamentos/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao excluir pagamento:", error);
+      throw error;
+    }
+}

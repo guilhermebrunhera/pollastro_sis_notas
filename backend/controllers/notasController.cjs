@@ -7,8 +7,6 @@ const fs = require('fs');
 exports.listarNotas = (req, res) => {
     const mes = req.params.mes;
 
-    console.log(mes + " - " + typeof(mes))
-
     if(mes === null || mes === `null`){
         const sql = `
         SELECT 
@@ -21,7 +19,8 @@ exports.listarNotas = (req, res) => {
             COALESCE(clientes.tel_contato, "") AS tel_contato, 
             clientes.telefone AS telefone, 
             COALESCE(clientes.email, '') AS email, 
-            data_emissao, 
+            data_emissao,
+            COALESCE(data_saida, "") as data_saida, 
             status,
             COALESCE(notas.observacoes, "") AS observacoes,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
@@ -54,7 +53,8 @@ exports.listarNotas = (req, res) => {
             COALESCE(clientes.tel_contato, "") AS tel_contato, 
             clientes.telefone AS telefone, 
             COALESCE(clientes.email, '') AS email, 
-            data_emissao, 
+            data_emissao,
+            COALESCE(data_saida, "") as data_saida, 
             status,
             COALESCE(notas.observacoes, "") AS observacoes,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
@@ -90,7 +90,8 @@ exports.listarNotasItem = (req, res) => {
             clientes.endereco AS endereco, 
             clientes.telefone AS telefone, 
             COALESCE(clientes.email, '') AS email, 
-            data_emissao, 
+            data_emissao,
+            COALESCE(data_saida, "") as data_saida, 
             status,
             COALESCE(notas.observacoes, "") AS observacoes,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) AS totalNota,
@@ -121,7 +122,7 @@ exports.detalharNota = (req, res) => {
 
     const notaQuery = `
         SELECT notas.id, clientes.nome AS cliente, clientes.telefone, clientes.email, clientes.endereco, notas.cliente_id,
-               data_emissao, COALESCE(observacoes, "") as observacoes, status, notas.nota_impressa, notas.desconto, notas.desconto_obs
+               data_emissao, COALESCE(data_saida, "") as data_saida, COALESCE(observacoes, "") as observacoes, status, notas.nota_impressa, notas.desconto, notas.desconto_obs
         FROM notas
         JOIN clientes ON notas.cliente_id = clientes.id
         WHERE notas.id = ?
@@ -153,8 +154,8 @@ exports.detalharNota = (req, res) => {
 exports.criarNota = (req, res) => {
     const { cliente_id, itens, data_emissao, observacoes, desconto, status, desconto_obs } = req.body;
 
-    const notaSQL = 'INSERT INTO notas (cliente_id, data_emissao, status, observacoes, desconto, desconto_obs) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(notaSQL, [cliente_id, data_emissao, status, observacoes, desconto, desconto_obs], (err, result) => {
+    const notaSQL = 'INSERT INTO notas (cliente_id, data_emissao, status, observacoes, desconto, desconto_obs, data_saida) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(notaSQL, [cliente_id, data_emissao, status, observacoes, desconto, desconto_obs, (status === "Paga" || status === "Entregue" ? new Date(): null)], (err, result) => {
         if (err) return res.status(500).json({ error: err });
         const notaId = result.insertId;
 
@@ -175,11 +176,11 @@ exports.atualizarNota = (req, res) => {
 
     const updateNotaSQL = `
         UPDATE notas
-        SET cliente_id = ?, data_emissao = ?, observacoes = ?, status = ?, desconto = ?, desconto_obs = ?
+        SET cliente_id = ?, data_emissao = ?, observacoes = ?, status = ?, desconto = ?, desconto_obs = ?, data_saida = ?
         WHERE id = ?
     `;
 
-    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, desconto, desconto_obs, notaId], (err) => {
+    db.query(updateNotaSQL, [cliente_id, data_emissao, observacoes, status, desconto, desconto_obs, (status === "Paga" || status === "Entregue" ? new Date(): null),notaId], (err) => {
         if (err) return res.status(500).json({ error: err });
 
         // Deletar os itens antigos
@@ -225,17 +226,32 @@ exports.alterStatusNota = (req, res) => {
     const notaId = req.params.id;
     const status = req.params.status;
 
-    const updateNotaSQL = `
-        UPDATE notas
-        SET status = ?
-        WHERE id = ?
-    `;
+    if(status !== `Paga` && status !== `Entregue`){
+        const updateNotaSQL = `
+            UPDATE notas
+            SET status = ?, data_saida = null
+            WHERE id = ?
+        `;
 
-    db.query(updateNotaSQL, [status, notaId], (err) => {
-        if (err) return res.status(500).json({ error: err });
+        db.query(updateNotaSQL, [status, notaId], (err) => {
+            if (err) return res.status(500).json({ error: err });
 
-        res.json({message: "Status da nota atualizada com sucesso!"})
-    });
+            res.json({message: "Status da nota atualizada com sucesso!"})
+        });
+    } else {
+        const updateNotaSQL = `
+            UPDATE notas
+            SET status = ?, data_saida = ?
+            WHERE id = ?
+        `;
+
+        db.query(updateNotaSQL, [status, new Date(), notaId], (err) => {
+            if (err) return res.status(500).json({ error: err });
+
+            res.json({message: "Status da nota atualizada com sucesso!"})
+        });
+    }
+    
 };
 
 exports.alterNotaImpressa = (req, res) => {
@@ -307,3 +323,101 @@ exports.getImagensNota = [
       })
     }
   ];
+
+  exports.getPagamentos = (req, res) => {
+    const notaId = req.params.notaId
+
+    const sql = `
+        SELECT 
+            notas_pagamentos.id as id,
+            nota_id as notaId,
+            valorPago,
+            observacao,
+            date_format(dataPagamento, '%Y-%m-%d') as dataPagamento,
+            pago
+        FROM 
+            notas_pagamentos
+            JOIN notas ON notas.id = notas_pagamentos.nota_id
+            
+        WHERE 
+            notas.id = ?
+    `;
+    db.query(sql, [notaId], (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+};
+
+exports.getPagamentoId = (req, res) => {
+    const notaId = req.params.notaId
+    const id = req.params.id
+
+    const sql = `
+        SELECT 
+            notas_pagamentos.id as id,
+            nota_id as notaId,
+            valorPago,
+            observacao,
+            date_format(dataPagamento, '%Y-%m-%d') as dataPagamento,
+            pago
+        FROM 
+            notas_pagamentos
+            JOIN notas ON notas.id = notas_pagamentos.nota_id
+            
+        WHERE 
+            notas.id = ?
+            AND notas_pagamentos.id = ?
+    `;
+    db.query(sql, [notaId, id], (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+};
+
+exports.deletePagamento = (req, res) => {
+    const id = req.params.id;
+
+    db.query('DELETE FROM notas_pagamentos WHERE id = ?', [id], (err) => {
+        if (err) return res.status(500).json({ success: false, error: err });
+
+        res.json({ success: true, message: 'Pagamento deletado com sucesso' });
+    });
+};
+
+exports.postPagamento = (req, res) => {
+    const notaId = req.params.notaId;
+    
+    const Pagamentos = req.body
+
+    //apagar para atualizar
+    db.query(`DELETE FROM notas_pagamentos WHERE nota_id = ?`, notaId)
+    //
+
+    let inseridos = 0;
+
+    Pagamentos.forEach(pagamento => {
+    db.query(
+        'INSERT INTO notas_pagamentos (nota_id, valorPago, observacao, pago, dataPagamento) VALUES (?,?,?,?,?)',
+        [notaId, pagamento.valorPago, pagamento.observacao, pagamento.pago, pagamento.dataPagamento],
+        (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        inseridos++;
+        if (inseridos === Pagamentos.length) {
+            res.json({ success: true });
+        }
+        }
+    );
+    });
+};
+
+exports.putPagamento = (req, res) => {
+    const { id, valorPago, observacao } = req.body;
+
+
+    db.query('UPDATE notas_pagamentos SET valorPago = ? observacao = ? WHERE id = ? ', [valorPago, observacao, id], (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        res.json({ message: 'Pagamento alterado com sucesso' });
+    });
+};

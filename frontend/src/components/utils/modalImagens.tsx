@@ -8,7 +8,7 @@ interface notaImagens {
     nota_id: number
 } 
 
-export default function ModalUploadImagens({ notaId }: { notaId: number | undefined }) {
+export default function ModalUploadImagens({ notaId, onFechar }: { notaId: number | undefined, aberto: boolean, onFechar: () => void }) {
     const [showModal, setShowModal] = useState(false);
     const [imagensPreview, setImagensPreview] = useState<string[]>([]);
     const [imagensArquivos, setImagensArquivos] = useState<File[]>([]);
@@ -121,7 +121,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
                 boxShadow: '0 0 10px rgba(0,0,0,0.2)'
                 }}>
                 {/* Botão fechar */}
-                <button onClick={() => setShowModal(false)} style={{
+                <button onClick={(e) => {setShowModal(false); onFechar(); e.stopPropagation()}} style={{
                     position: 'absolute',
                     top: '10px',
                     right: '10px',
@@ -230,7 +230,7 @@ export default function ModalUploadImagens({ notaId }: { notaId: number | undefi
                     />
         
                     <button onClick={handleUpload} style={{
-                        backgroundColor: '#4A90E2',
+                        backgroundColor: '#327735',
                         color: 'white',
                         padding: '10px 20px',
                         border: 'none',

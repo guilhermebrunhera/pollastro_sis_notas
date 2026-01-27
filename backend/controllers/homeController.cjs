@@ -69,3 +69,30 @@ exports.listarDadosHome = (req, res) => {
         });
     });
 };
+
+exports.listarPedidosVencidos = (req, res) => {
+
+    db.query(`
+        SELECT
+	notas.id,
+    DATEDIFF(now(), data_emissao) AS dias_atraso,
+    SUM(nota_itens.preco_unitario * nota_itens.quantidade) - COALESCE(notas.desconto, 0) AS totalNota,
+    clientes.nome as clienteNome,
+    data_emissao,
+    clientes.telefone
+FROM 
+	notas
+    JOIN nota_itens ON nota_itens.nota_id = notas.id
+    JOIN clientes ON clientes.id = notas.cliente_id
+WHERE 
+	data_emissao <= NOW() - INTERVAL 30 DAY
+    AND status != 'Paga' AND status != 'Cancelada'
+GROUP BY
+	notas.id
+ORDER BY 
+	clientes.nome
+        `, (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+};

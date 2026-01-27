@@ -14,4 +14,10 @@ router.post('/notas/:id/imagens', controller.uploadImagensNota);
 router.get('/notas/:id/imagens', controller.getImagensNota);
 router.delete('/notas/:id/imagens', controller.deleteImagensNota);
 
+router.post('/pagamentos/:notaId', controller.postPagamento);
+router.put('/pagamentos/:notaId/:id', controller.putPagamento);
+router.get('/pagamentos/:notaId', controller.getPagamentos);
+router.get('/pagamentos/:notaId/:id', controller.getPagamentoId);
+router.delete('/pagamentos/:id', controller.deletePagamento);
+
 module.exports = router;

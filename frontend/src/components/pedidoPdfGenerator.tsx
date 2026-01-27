@@ -109,7 +109,7 @@ export async function gerarPedidoPDF(nota: NotaData) {
     drawNota(428); // segunda (direita), considerando 595*0.7 + um espaçamento de ~10px
   
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     const pdfUrl = URL.createObjectURL(blob);
     window.open(pdfUrl, '_blank');
   }

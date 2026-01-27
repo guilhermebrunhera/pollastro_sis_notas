@@ -75,7 +75,7 @@ nota.produtos.forEach((item) => {
 
   const pdfBytes = await pdfDoc.save();
 
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
   const pdfUrl = URL.createObjectURL(blob);
   window.confirm("Deseja baixar este arquivo no seu computador? \n\nClique em 'Cancelar' para somente abrir o arquivo.") ? saveAs(blob, "Nota de Serviço - " + nota.nome + " " + nota.data + ".pdf") : null;
   window.open(pdfUrl, '_blank');

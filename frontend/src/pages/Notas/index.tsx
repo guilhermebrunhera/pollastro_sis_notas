@@ -23,7 +23,7 @@ import Toast from '../../components/Toasts/toasts';
 import Header from '../../components/Header';
 import { MdApps } from 'react-icons/md';
 import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
-// import ModalPagamentos from './modalPagamentos';
+import ModalPagamentos from './modalPagamentos';
 
 
 interface Cliente {
@@ -59,6 +59,7 @@ interface Nota {
   id: number;
   cliente_id: number;
   data_emissao: string;
+  data_saida?: string;
   observacoes: string;
   status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
   itens: NotaItem[];
@@ -228,6 +229,12 @@ function Notas() {
     }
   };
 
+  const CarregarProdutos = function() {
+    getProdutos().then((data) => {
+      setProdutos(data);
+    });
+  }
+
   const handleHasDesconto = (e : React.ChangeEvent<HTMLInputElement>) => {
     const valorDesconto = e.target.value.replace(/\D/g, "");
 
@@ -284,6 +291,10 @@ function Notas() {
     const novosItens = [...nota.itens];
     novosItens.splice(index, 1);
     setNota(prev => ({ ...prev, itens: novosItens }));
+
+    if(novosItens.length === 0){
+      adicionarItem()
+    }
   };
 
   const handleSubmitNota = async (e: React.FormEvent) => {
@@ -351,12 +362,12 @@ function Notas() {
       let notaData = data.nota;
       let notaItens = data.itens;
       
-      console.log(notaData.desconto)
 
       setNota({
         id: id,
         cliente_id: notaData.cliente_id,
         data_emissao: format(notaData.data_emissao, "yyyy-MM-dd"),
+        data_saida: notaData.data_saida === null || notaData.data_saida === "" || notaData.data_saida === undefined ? "" : format(notaData.data_saida , "dd/MM/yy"),
         observacoes: notaData.observacoes,
         desconto: notaData.desconto,
         desconto_obs: notaData.desconto_obs,
@@ -457,6 +468,7 @@ function Notas() {
             nome : nota.cliente ? nota.cliente : "",
             numero: String(nota.id),
             data: format(nota.data_emissao, "dd/MM/yy"),
+            data_saida: nota.data_saida === null || nota.data_saida === "" || nota.data_saida === undefined ? "" : format(nota.data_saida , "dd/MM/yy"),
             cidade: String(nota.cidade),
             telefone: String(nota.telefone) ,
             email: String(nota.email),
@@ -592,7 +604,6 @@ function Notas() {
           <h2>{modoEdicao ? 'Editar Pedido' : 'Novo Pedido'}</h2>
           <form onSubmit={handleSubmitNota}>
             <div style={{width: `100%`, display: `flex`, gap: `0.5rem`, alignItems: `center`}}>
-              {/* <div style={{display: 'flex', width: `100%`}}><ModalPagamentos notaId={notaEditandoId ? notaEditandoId : 0} onClose={() => {console.log("fumegou")}}></ModalPagamentos></div> */}
               <div style={{width: `70%`}}>
                 <label>Cliente:</label>
                 <Select
@@ -690,7 +701,7 @@ function Notas() {
                       }));
 
                     return (
-                      <div style={{maxWidth: `30rem`, width:`30rem`}}>
+                      <div style={{maxWidth: `30rem`, width:`30rem`}} onClick={CarregarProdutos}>
                         <Select
                           name="produto_id"
                           options={opcoesDisponiveis}
@@ -736,6 +747,7 @@ function Notas() {
                     handleOnlyNumberQtd(e);
                     handleItemChange(index, 'quantidade', e.target.value);
                   }}
+                  onFocus={(e) => {e.currentTarget.select()}}
                 />
                 
                 {(() => {
@@ -756,15 +768,26 @@ function Notas() {
                     );
                   } else {
                     return (
+                      //Sem alterar os valores do produto
+                      // <input
+                      //   style={{ maxWidth: '30%',textAlign: `end`, paddingRight: `0.5rem` }}
+                      //   type="text"
+                      //   placeholder="Preço (Produto)"
+                      //   value={
+                      //     formatarReaisSemSimboloFloat(item.preco_unitario)
+                      //   }
+                      //   onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
+                      //   disabled={true}
+                      // />
                       <input
-                        style={{ maxWidth: '30%',textAlign: `end`, paddingRight: `0.5rem` }}
-                        type="text"
-                        placeholder="Preço (Produto)"
-                        value={
-                          formatarReaisSemSimboloFloat(item.preco_unitario)
-                        }
-                        onChange={(e) => handleItemChange(index, 'preco_unitario', e.target.value)}
-                        disabled={true}
+                      type="text"
+                      value={item.centavos === 0 || item.centavos === undefined || item.centavos === null ? formatarReaisSemSimboloFloat(item.preco_unitario) : item.preco_unitario === item.centavos ? formatarCentavosParaBRL(item.centavos ? item.centavos * 100 : 0) : formatarCentavosParaBRL(item.centavos ? item.centavos : 0) }
+                        onChange={(e) => {
+                          handleChangeValorProduto(e, index);
+                          handleItemChange(index, `preco_unitario`, (item.centavos ? item.centavos : 0) / 10)
+                        }}
+                        onFocus={(e) => {e.currentTarget.select()}}
+                        style={{ maxWidth: "22.5rem", fontSize: "16px", padding: "4px", textAlign: `end`, paddingRight: `0.5rem` }}
                       />
                     );
                   }
@@ -889,10 +912,11 @@ function Notas() {
                 <span>{nota.totalNota ? "R$ " + formatarReaisSemSimboloString(nota.totalNota) : ""}</span>
                 <span style={{width: "5%"}}>
                   {nota.status === "Paga" ? 
-                    nota.status
+                    'PAGO'
                   :
                   <select
                     value={nota.status}
+                    style={{backgroundColor: nota.status === `Producao` ? `#F79494` : nota.status === `Finalizada` ? `#FFFF66` : nota.status === `Entregue` ? `lightgreen` : nota.status === `Cancelada`? `#CC99FF` : ``}}
                     onChange={async (e) => {
                       const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
                       try {
@@ -901,6 +925,7 @@ function Notas() {
                         setNotas(prev =>
                           prev.map(n => n.id === nota.id ? { ...n, status: novoStatus } : n)
                         );
+                        carregarDados()
                       } catch (err) {
                         setToast({message: "Erro ao atualizar status: " + err, type: "Erro"})
                       }
@@ -910,6 +935,7 @@ function Notas() {
                     <option value="Producao">Em Produção</option>
                     <option value="Cancelada">Cancelado</option>
                     <option value="Finalizada">Finalizado</option>
+                    <option value="Entregue">Entregue</option>
                     <option value="Paga">Pago</option>
                   </select>
                   }
@@ -941,7 +967,10 @@ function Notas() {
                             }} />
                           </span>
                           {nota.status !== "Paga" ? <button title='Editar' className='botao-icone' onClick={() => iniciarEdicao(nota.id!)}>✏️</button> : <></>}
-                          {nota.status !== "Finalizada" && nota.status !== "Paga" && (!nota.nota_impressa || nota.status === `Cancelada`) ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>} 
+                          {nota.status !== "Finalizada" && nota.status !== "Paga" && nota.status !== "Entregue" && (!nota.nota_impressa || nota.status === `Cancelada`) ? <button title='Excluir' className='botao-icone' onClick={() => excluirNota(nota.id!)}>🗑️</button> : <></>} 
+                          <ModalPagamentos notaId={nota.id} notaValor={nota.totalNota ? nota.totalNota : "0.00"} onClose={(success:boolean) => {
+                            if (success) setToast({message: "Pagamento(s) salvo(s) com sucesso!", type: `Sucesso`})
+                          }}/>
                       </div>
                     )}
                   </div>

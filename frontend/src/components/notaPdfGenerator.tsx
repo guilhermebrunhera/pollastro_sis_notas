@@ -14,6 +14,7 @@ interface Produto {
 interface NotaData {
   numero: string;
   data: string;
+  data_saida?: string;
   nome?: string;
   cidade: string;
   telefone: string;
@@ -96,12 +97,21 @@ export async function gerarNotaPDF(nota: NotaData) {
       
   
       // Cabeçalho
-      drawText(nota.data.split("/")[0], 78, 652, 12);
-      drawText(nota.data.split("/")[1], 103, 652, 12);
-      drawText(nota.data.split("/")[2], 127, 652, 12);
-      drawText(nota.telefone, 220, 652, 12);
-      drawText(nota.email, 376, 651, 12);
-      drawText(String(nota.nome), 85, 622, 10);
+      drawText(nota.data.split("/")[0], 133, 652, 12);
+      drawText(nota.data.split("/")[1], 158, 652, 12);
+      drawText(nota.data.split("/")[2], 183, 652, 12);
+
+      if(nota.data_saida !== null && nota.data_saida !== undefined && nota.data_saida !== ""){
+
+        drawText(nota.data_saida.split("/")[0], 288, 652, 12);
+        drawText(nota.data_saida.split("/")[1], 313, 652, 12);
+        drawText(nota.data_saida.split("/")[2], 338, 652, 12);
+
+      }
+
+      drawText(nota.telefone, 426, 652, 12);
+      // drawText(nota.email, 376, 651, 12);
+      drawText(String(nota.nome), 85, 623, 10);
 
       if(nota.contato !== "" || nota.tel_contato !== ""){
         drawText(String(nota.contato) + " - " + String(nota.tel_contato), 368, 623, 10);
@@ -194,9 +204,9 @@ export async function gerarNotaPDF(nota: NotaData) {
       drawNota(15); // primeira (esquerda)
       drawNota(428); // segunda (direita), considerando 595*0.7 + um espaçamento de ~10px
     }
-  
+   
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     const pdfUrl = URL.createObjectURL(blob);
     if(nota.download){
       saveAs(blob, `Nota de Serviço - ${nota.nome} ${nota.data}.pdf`)

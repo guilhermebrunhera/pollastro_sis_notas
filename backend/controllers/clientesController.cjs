@@ -67,3 +67,63 @@ exports.deletarCliente = (req, res) => {
         res.json({ message: 'Cliente removido com sucesso' });
     });
 };
+
+exports.BuscarNotasClientes = (req, res) => {
+
+    let clienteId = req.params.id
+    let {dataFim, dataInicio, status} = req.body
+    let consulta = ""
+
+    if(status === ""){
+        consulta = `SELECT 
+                SUM((nota_itens.preco_unitario * nota_itens.quantidade)) - (IF(notas.desconto is not null, notas.desconto, 0)) as valor,
+                notas.id as numeroPedido,
+                (   SELECT 
+						COALESCE(SUM(valorPago), 0) 
+					FROM 
+						notas_pagamentos 
+					WHERE 
+						notas_pagamentos.nota_id = notas.id AND 
+						notas_pagamentos.pago = 1
+				) as valorPago,
+                notas.data_emissao as data,
+                notas.status
+            FROM 
+                notas JOIN 
+                nota_itens ON nota_itens.nota_id = notas.id 
+            WHERE 
+                cliente_id = ? AND
+                notas.data_emissao between ? AND ?
+            GROUP BY 
+                notas.id`
+    } else {
+        consulta = `SELECT 
+                SUM((nota_itens.preco_unitario * nota_itens.quantidade)) - (IF(notas.desconto is not null, notas.desconto, 0)) as valor,
+                notas.id as numeroPedido,
+                (   SELECT 
+						COALESCE(SUM(valorPago), 0) 
+					FROM 
+						notas_pagamentos 
+					WHERE 
+						notas_pagamentos.nota_id = notas.id AND 
+						notas_pagamentos.pago = 1
+				) as valorPago,
+                notas.data_emissao as data,
+                notas.status
+            FROM 
+                notas JOIN 
+                nota_itens ON nota_itens.nota_id = notas.id 
+            WHERE 
+                cliente_id = ? AND
+                notas.data_emissao between ? AND ? AND
+                notas.status = ?
+            GROUP BY 
+                notas.id`
+    }
+
+    db.query(consulta, [clienteId, dataInicio, dataFim, status],
+        (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            res.json(results);
+    });
+};

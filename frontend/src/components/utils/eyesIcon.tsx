@@ -1,4 +1,4 @@
-export const EyeIcon = ({ size = 24, color = "currentColor" }) => (
+export const EyeIcon = ({ size = 24, color = "currentColor", title = "Mostrar" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -10,12 +10,13 @@ export const EyeIcon = ({ size = 24, color = "currentColor" }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
+    {title && <title id='eyeOn'>{title}</title>}
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
-export const EyeOffIcon = ({ size = 24, color = "currentColor" }) => (
+export const EyeOffIcon = ({ size = 24, color = "currentColor", title = "Esconder" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -27,6 +28,7 @@ export const EyeOffIcon = ({ size = 24, color = "currentColor" }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
+    {title && <title id='eyeOff'>{title}</title>}
     <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.82 21.82 0 0 1 5.09-6.35" />
     <path d="M1 1l22 22" />
     <path d="M9.53 9.53a3.5 3.5 0 0 0 4.95 4.95" />

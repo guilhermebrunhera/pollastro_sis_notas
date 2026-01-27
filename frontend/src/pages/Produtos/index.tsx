@@ -6,6 +6,7 @@ import { formatarReaisSemSimboloString, removerAcentosTexto } from '../../compon
 import Toast from '../../components/Toasts/toasts';
 import { printProdutos } from './printProdutos';
 import Header from '../../components/Header';
+import { FaAngleDown, FaAngleUp } from 'react-icons/fa';
 
 interface Produto {
   id?: number;
@@ -27,12 +28,29 @@ function Produtos() {
   const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
   const [foto, setFoto] = useState<File | null>(null)
   const [openDropsFoto, setOpenDropsFoto] = useState<string | undefined>(undefined);
+  const [scrolled, setScrolled] = useState(false);
+  const [showHeaders, setShowHeaders] = useState(true);
 
   useEffect(() => {
     listarProdutos();
     setTipoSelecionado(`P`);
     
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setScrolled(true);
+      } else {
+        setScrolled(false)
+        setShowHeaders(true)
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,23 +167,45 @@ function Produtos() {
     <>
     <Header />
     <div className='content-clientes'>
-      <div style={{ maxWidth: "80%", alignItems: "center", justifyContent: "space-between", margin: "0 auto", display: "flex" }}>
-        <button 
-          className='default'
-          style={{width: '100%', margin: 0, padding: 0}} 
-          onClick={() => {
-            setNovoProdutoOpen(!novoProdutoOpen);
-            setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P", foto: "" });
-            setFoto(null)
-          }}
-        >
-          {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
-        </button>
-        <button style={{maxWidth: "4rem", width: '100%'}} className='default' title='Imprimir Lista Produtos' onClick={imprimirProdutos}>🖨️</button>
-      </div>
+      <center>
+        <div className={showHeaders ? scrolled ? "div-background-header scrolled show" : "div-background-header show" : "div-background-header hide" }>
+          <button 
+            className='default'
+            style={{width: `100%`}}
+            onClick={() => {
+              setNovoProdutoOpen(!novoProdutoOpen);
+              setProduto({ nome: '', descricao: '', preco: "0,00", tipo: "P", foto: "" });
+              setFoto(null)
+            }}
+          >
+            {novoProdutoOpen ? 'Cancelar Cadastro' : '+ Cadastrar novo Produto'}
+          </button>
+          {!novoProdutoOpen && !modoEdicao ? 
+            <input
+              type="text"
+              className='input-filtro'
+              placeholder="Filtrar produtos..."
+              value={termoFiltro}
+              onChange={(e) => setTermoFiltro(e.target.value)}
+              style={{ width: '80%', padding: '0.5rem', marginBottom: '1rem' }}
+            />  
+            : <></>
+        }
+        </div>
+        {scrolled && !novoProdutoOpen && !modoEdicao ? 
+          <button 
+            className={showHeaders ? "buttonShowHeaders" : "buttonShowHeadersTop"} 
+            onClick={() => setShowHeaders(!showHeaders)}
+          >            
+            {showHeaders ? <FaAngleUp></FaAngleUp> : <FaAngleDown></FaAngleDown>}
+          </button>
+        :
+          <></>
+        }
+      </center>
 
       {novoProdutoOpen ? 
-        <div style={{ maxWidth: "80%", margin: "0 auto" }}>
+        <div style={{ maxWidth: "80%", margin: "0 auto", paddingTop: `7rem` }}>
           <h2>Cadastrar Novo Produto</h2>
           <form onSubmit={handleSubmitProduto}>
             <div className='div-form-produtos'>
@@ -175,6 +215,7 @@ function Produtos() {
                   <input
                     type="text"
                     name="nome"
+                    maxLength={22}
                     value={produto.nome}
                     onChange={handleChangeProduto}
                     required
@@ -184,6 +225,7 @@ function Produtos() {
                   <label>Descrição/Fabricante (Opcional):</label>
                   <input
                     type="text"
+                    maxLength={22}
                     name="descricao"
                     value={produto.descricao}
                     onChange={handleChangeProduto}
@@ -260,17 +302,21 @@ function Produtos() {
           </form>
         </div>
       :
-      <div style={{ maxWidth: "80%", margin: "0 auto" }}>
-        <h3>Filtro:</h3>
-        <input
-          type="text"
-          placeholder="Filtrar produtos..."
-          value={termoFiltro}
-          onChange={(e) => setTermoFiltro(e.target.value)}
-          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-        />
-        <h2>Lista de Produtos</h2>
+      <div style={{ maxWidth: "80%", margin: "0 auto", paddingTop: `9rem` }}>
+        
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h2>Lista de Produtos</h2>
+          <button style={{maxWidth: "4rem", width: '100%'}} className='default' title='Imprimir Lista Produtos' onClick={imprimirProdutos}>🖨️</button>
+        </div>
         <ul>
+          {
+            produtosFiltrados.length === 0 ?
+            <div style={{width: `100%`, textAlign: `center`}}>
+              <h2>Nenhum Produto encontrado, tente outro filtro.</h2>
+            </div>
+            :
+            <></>
+          }
           {produtosFiltrados.map((produto) => (
             <li key={produto.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>{produto.nome}</span>
