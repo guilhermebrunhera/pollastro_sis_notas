@@ -61,7 +61,7 @@ interface Nota {
   data_emissao: string;
   data_saida?: string;
   observacoes: string;
-  status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
+  status: '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue' | 'Boleto';
   itens: NotaItem[];
   cliente?: string;
   endereco?: string;
@@ -654,15 +654,16 @@ function Notas() {
             <label>Status:</label>
             <select
               value={nota.status}
-              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue' }))}
+              onChange={(e) => setNota(prev => ({ ...prev, status: e.target.value as '' | 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue' | 'Boleto' }))}
             >
               <option value="">-- Selecione --</option>
               <option value="Orcamento">Orçamento</option>
               <option value="Producao">Em Produçao</option>
               <option value="Cancelada">Cancelado</option>
-              <option value="Finalizada">Finalizado</option>
+              {/* <option value="Finalizada">Finalizado</option> */}
               <option value="Entregue">Entregue</option>
               <option value="Paga">Pago</option>
+              <option value="Boleto">Boleto</option>
             </select>
             <br/>
             <hr></hr>
@@ -916,9 +917,9 @@ function Notas() {
                   :
                   <select
                     value={nota.status}
-                    style={{backgroundColor: nota.status === `Producao` ? `#F79494` : nota.status === `Finalizada` ? `#FFFF66` : nota.status === `Entregue` ? `lightgreen` : nota.status === `Cancelada`? `#CC99FF` : ``}}
+                    style={{backgroundColor: nota.status === `Producao` ? `#F79494` : nota.status === `Finalizada` ? `#FFFF66` : nota.status === `Entregue` ? `lightgreen` : nota.status === `Cancelada`? `#CC99FF` : nota.status === `Boleto` ? `#FFFF66` : ``}}
                     onChange={async (e) => {
-                      const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue';
+                      const novoStatus = e.target.value as 'Producao' | 'Cancelada' | 'Finalizada' | 'Paga' | 'Orcamento' | 'Entregue' | 'Boleto';
                       try {
                         await alterStatusNota(nota.id!, novoStatus);
                         setToast({message: "Status da nota atualizado com Sucesso!", type: "Sucesso"})
