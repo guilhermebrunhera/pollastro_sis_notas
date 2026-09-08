@@ -248,6 +248,30 @@ export const getPedidosVencidos = async () => {
   return res.data;
 };
 
+export const getDadosBoletos = async () => {
+  const res = await axios.get(`${API_URL}/boletos`);
+  return res.data;
+}
+
+export const updateStatusBoleto = async (id: number, status: string) => {
+  const res = await axios.put(`${API_URL}/boletos/${id}`, {status});
+  return res.data;
+}
+
+export const postBoleto = async (formData: FormData) => {
+  const res = await axios.post(`${API_URL}/boletos`, formData);
+  return res.data;
+};
+
+export const getBoletosParaVencer = async () => {
+  const res = await axios.get(`${API_URL}/boletos/para_vencer`);
+  return res.data;
+}
+
+export const deleteBoleto = async (id: number) => {
+  const res = await axios.delete(`${API_URL}/boletos/${id}`);
+  return res.data;
+}
 // __________________________________________________  ACOMPANHAMENTOS ______________________________//
 
 export async function getAcompanhamentos() {

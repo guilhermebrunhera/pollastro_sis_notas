@@ -1,0 +1,17 @@
+# Dependências
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Builds
+dist/
+build/
+
+# Configurações locais
+.env
+.env.*
+
+# Arquivos enviados pelo sistema
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.zip

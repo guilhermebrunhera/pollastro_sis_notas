@@ -27,11 +27,20 @@ exports.listarNotas = (req, res) => {
             notas.desconto as desconto,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
             notas.desconto_obs,
-            notas.nota_impressa
+            notas.nota_impressa,
+            COALESCE(imagens.qtdFotos, 0) as temFoto
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
             JOIN nota_itens ON notas.id = nota_itens.nota_id
+             LEFT JOIN (
+				SELECT 
+					nota_id,
+					COUNT(*) AS qtdFotos
+				FROM notas_imagens
+				GROUP BY nota_id
+			) AS imagens 
+				ON notas.id = imagens.nota_id
         GROUP BY
             notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
         ORDER BY 
@@ -61,11 +70,20 @@ exports.listarNotas = (req, res) => {
             notas.desconto as desconto,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
             notas.desconto_obs,
-            notas.nota_impressa
+            notas.nota_impressa,
+            COALESCE(imagens.qtdFotos, 0) as temFoto
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
             JOIN nota_itens ON notas.id = nota_itens.nota_id
+             LEFT JOIN (
+				SELECT 
+					nota_id,
+					COUNT(*) AS qtdFotos
+				FROM notas_imagens
+				GROUP BY nota_id
+			) AS imagens 
+				ON notas.id = imagens.nota_id
         WHERE
             DATE_FORMAT(data_emissao, '%Y-%m') = ?
         GROUP BY
@@ -99,11 +117,20 @@ exports.listarNotasItem = (req, res) => {
             notas.desconto as desconto,
             SUM(nota_itens.preco_unitario * nota_itens.quantidade) as totalNotaSemDesconto,
             notas.desconto_obs,
-            notas.nota_impressa
+            notas.nota_impressa,
+            COALESCE(imagens.qtdFotos, 0) as temFoto
         FROM 
             notas
             JOIN clientes ON notas.cliente_id = clientes.id
             JOIN nota_itens ON notas.id = nota_itens.nota_id
+             LEFT JOIN (
+				SELECT 
+					nota_id,
+					COUNT(*) AS qtdFotos
+				FROM notas_imagens
+				GROUP BY nota_id
+			) AS imagens 
+				ON notas.id = imagens.nota_id
         GROUP BY
             notas.id, clientes.nome, clientes.endereco, clientes.telefone, clientes.email, data_emissao
         ORDER BY 

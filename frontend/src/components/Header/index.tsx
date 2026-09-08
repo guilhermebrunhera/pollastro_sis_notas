@@ -2,9 +2,17 @@ import { useLocation, NavLink } from 'react-router-dom'
 import './styles.css'
 import imgLogo from '../../assets/pollastro_logo.png'
 import UserMenu from './UserMenu';
+import { FaBell } from 'react-icons/fa';
+import { getBoletosParaVencer } from '../../services/APIService';
+import { useState } from 'react';
 
 function Header() {
     const localAtivo = useLocation();
+    const [quantidadeBoletos, setQuantidadeBoletos] = useState(0);
+
+    getBoletosParaVencer().then((boletos) => {
+        setQuantidadeBoletos(boletos.length);
+    });
 
     return(
         <header>
@@ -13,6 +21,8 @@ function Header() {
                 <h2>Pollastro Metalurgia</h2>
             </div>
             <div>
+                
+
                 <NavLink style={() => ({
                     color: localAtivo.pathname === "/Home" ? "gray" : "white",
                     cursor: localAtivo.pathname === "/Home" ? "default" : "pointer",
@@ -42,6 +52,24 @@ function Header() {
                     cursor: localAtivo.pathname === "/Acompanhamentos" ? "default" : "pointer",
                     textDecoration: localAtivo.pathname === "/Acompanhamentos" ? "none" : ""
                 })} to='/Acompanhamentos'>Acompanhamentos</NavLink> */}
+
+                <NavLink
+                    className="notificacao-link"
+                    to={{
+                        pathname: '/Home',
+                        search: '?aba=boletos'
+                    }}
+                    title={`${quantidadeBoletos} boleto(s) próximo(s) do vencimento`}
+                    >
+                    <FaBell size={22} />
+
+                    {quantidadeBoletos > 0 && (
+                        <span className="notificacao-quantidade">
+                        {quantidadeBoletos > 99 ? '99+' : quantidadeBoletos}
+                        </span>
+                    )}
+                </NavLink>
+
                 <UserMenu />
             </div>
         </header>

@@ -89,7 +89,7 @@ CREATE TABLE `notas` (
   `cliente_id` int NOT NULL,
   `data_emissao` datetime DEFAULT CURRENT_TIMESTAMP,
   `observacoes` text,
-  `status` enum('Producao','Cancelada','Finalizada','Paga','Orcamento','Entregue') DEFAULT NULL,
+  `status` enum('Producao','Cancelada','Finalizada','Paga','Orcamento','Entregue', 'Boleto') DEFAULT NULL,
   `desconto` decimal(10,2) DEFAULT NULL,
   `desconto_obs` varchar(255) DEFAULT '',
   `nota_impressa` tinyint(1) NOT NULL DEFAULT '0',

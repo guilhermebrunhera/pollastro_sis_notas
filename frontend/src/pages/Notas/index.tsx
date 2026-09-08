@@ -75,7 +75,8 @@ interface Nota {
   cidade?: string;
   cep?: string;
   contato?: string;
-  tel_contato?: string
+  tel_contato?: string;
+  temFoto: number;
 }
 
 const formatarCentavosParaBRL = (centavos: number) => {
@@ -116,7 +117,8 @@ function Notas() {
     observacoes: '',
     status: '', // Status padrão
     itens: [],
-    desconto: 0
+    desconto: 0,
+    temFoto: 0
   });
 
   const clientesFiltrados = notas.filter(notas =>
@@ -224,6 +226,7 @@ function Notas() {
       setClientes(clientesData);
       setProdutos(produtosData);
       setNotas(notasData);
+      console.log(notasData)
     } catch (err) {
       console.error(err);
     }
@@ -317,7 +320,8 @@ function Notas() {
         observacoes: '',
         status: 'Producao', // Status padrão
         itens: [],
-        desconto: 0
+        desconto: 0,
+        temFoto: 0
       });
       setNovaNotaOpen(false);
       setModoEdicao(false);
@@ -372,7 +376,8 @@ function Notas() {
         desconto: notaData.desconto,
         desconto_obs: notaData.desconto_obs,
         status: notaData.status,
-        itens: notaItens || []
+        itens: notaItens || [],
+        temFoto: notaData.temFoto || 0
       });
       setDesconto(notaData.desconto * 100)
       setModoEdicao(true);
@@ -555,7 +560,8 @@ function Notas() {
               status: 'Producao', // Status padrão
               itens: [{produto_id: 0, quantidade: 0, preco_unitario: 0}],
               desconto: 0,
-              desconto_obs: ""
+              desconto_obs: "",
+              temFoto: 0
             });
             localStorage.removeItem('notaFormulario');
             localStorage.removeItem('notaModoEdicao');
@@ -911,7 +917,8 @@ function Notas() {
                 <span style={{width: "32%"}}>{nota.cliente}</span>
                 <span style={{width: "10%"}}>{format(nota.data_emissao, "dd/MM/yyyy")}</span>
                 <span>{nota.totalNota ? "R$ " + formatarReaisSemSimboloString(nota.totalNota) : ""}</span>
-                <span style={{width: "5%"}}>
+                <span style={{maxWidth: "2%"}}>{(nota.temFoto > 0 && nota.status !== "Paga") ? <span style={{color: `#00FF00`, textAlign: `center`, cursor: `default`}}>📷</span> : <></>}</span>
+                <span style={{width: "4%"}}>
                   {nota.status === "Paga" ? 
                     'PAGO'
                   :

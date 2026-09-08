@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { getDadosHome, getPedidosVencidos } from '../../services/APIService'
+import { getDadosHome, getPedidosVencidos, getDadosBoletos, updateStatusBoleto, deleteBoleto } from '../../services/APIService'
 import './styles.css'
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
 import { formatarReaisSemSimboloFloat, formatarReaisSemSimboloString } from '../../components/utils/utils';
 import Header from '../../components/Header';
 import {EyeIcon, EyeOffIcon} from '../../components/utils/eyesIcon';
 import { format } from 'date-fns';
+import ModalBoletos from './modalBoleto';
+import Toast from '../../components/Toasts/toasts';
+import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { FaBarcode } from 'react-icons/fa';
 
 interface DadosHome {
   countProdutos: number;
@@ -24,20 +29,84 @@ interface PedidosVencidos {
   telefone: string;
 }
 
+interface Boletos {
+  id: number;
+  nome_boleto: string;
+  valor_boleto: number;
+  data_vencimento: string;
+  status: string;
+  local_foto?: string;
+  linha_digitavel?: string;
+}
+
 function Home() {
 
   const [dadosHome, setDadosHome] = useState<DadosHome>()
   const [pedidosVencidos, setPedidosVencidos] = useState<PedidosVencidos[]>([])
+  const [boletos, setBoletos] = useState<Boletos[]>([])
+  const [modalBoletoAberto, setModalBoletoAberto] = useState(false);
   const [showValue, setShowValue] = useState<number | null>(null)
   const [showPedidosVencidos, setShowPedidosVencidos] = useState<boolean>(false)
   const [slideHome, setSlideHome] = useState(false);
   const [slideGraficos, setSlideGraficos] = useState(true);
+  const [slideBoletos, setSlideBoletos] = useState(false);
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
+  const [toast, setToast] = useState<{ message: string, type: 'Sucesso' | 'Erro' | 'Alerta' | '' } | null>(null);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  
+  useEffect(() => {
+    const parametros = new URLSearchParams(location.search);
+    const aba = parametros.get('aba');
+
+    setSlideHome(aba === 'home');
+    setSlideGraficos(!aba || aba === 'graficos');
+    setSlideBoletos(aba === 'boletos');
+  }, [location.search]);
 
   useEffect(() => {
       carregarDadosHome();
       carregarPedidosVencidos();
+      carregarBoletos();
   }, []);
+
+  useEffect(() => {
+    const aba = searchParams.get('aba');
+
+    if (aba === 'boletos') {
+      setSlideHome(false);
+      setSlideGraficos(false);
+      setSlideBoletos(true);
+    }
+  }, [searchParams]);
+
+  const handleLinhaDigitavel = async (linhaDigitavel: string) => {
+    await navigator.clipboard.writeText(
+      linhaDigitavel
+    );
+
+    setToast({
+      message: 'Linha digitável copiada!',
+      type: 'Sucesso'
+    });
+  }
+
+  const handleDeleteBoleto = async (id: number) => {
+    try {
+      await deleteBoleto(id);
+      setBoletos(boletos.filter(b => b.id !== id));
+      setToast({
+        message: 'Boleto excluído com sucesso!',
+        type: 'Sucesso'
+      });
+    } catch (error) {
+      setToast({
+        message: 'Erro ao excluir boleto!',
+        type: 'Erro'
+      });
+      console.error("Erro ao excluir boleto:", error);
+    }
+  }
 
   const carregarDadosHome = async () => {
     await getDadosHome()
@@ -51,6 +120,23 @@ function Home() {
   const carregarPedidosVencidos = async () => {
     await getPedidosVencidos().then(data => {setPedidosVencidos(data)})
   }
+
+  const carregarBoletos = async () => {
+    await getDadosBoletos()
+      .then(data => {setBoletos(data); console.log(data)})
+  }
+
+  const alterarStatusBoleto = async (id: number, status: string) => {
+    const boleto = boletos.find(b => b.id === id);
+    if (!boleto) return;
+
+    try {
+      await updateStatusBoleto(id, status);
+      setBoletos(boletos.map(b => b.id === id ? { ...b, status } : b));
+    } catch (error) {
+      console.error("Erro ao alterar status do boleto:", error);
+    }
+  };
 
   const data = [
     { name: 'Clientes: ' + dadosHome?.countClientes, value: dadosHome?.countClientes, pathName: "Clientes" },
@@ -77,6 +163,7 @@ function Home() {
           onClick={() => {
             setSlideHome(false)
             setSlideGraficos(true)
+            setSlideBoletos(false)
           }}  
         >
           Gráficos
@@ -87,9 +174,21 @@ function Home() {
           onClick={() => {
             setSlideHome(true)
             setSlideGraficos(false)
+            setSlideBoletos(false)
           }}  
         >
           Pedidos Vencidos
+        </button>
+        <button 
+          className={slideBoletos ? "default ativo" : "default"}
+          disabled={slideBoletos ? true : false}
+          onClick={() => {
+            setSlideHome(false)
+            setSlideGraficos(false)
+            setSlideBoletos(true)
+          }}  
+        >
+          Boletos
         </button>
       </div>
 
@@ -184,10 +283,111 @@ function Home() {
             </div>
           }
         </div>
-        :
-        <></>
-      }
+        : slideBoletos ? (
 
+        // BOLETOS
+        <div className='content-home' style={{ paddingTop: '1rem' }}>
+          
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <label>Boletos À Pagar</label>
+          </div>
+
+          <button
+            className="default bt-header"
+            style={{ minWidth: '96%' }}
+            onClick={() => setModalBoletoAberto(true)}
+          >
+            Adicionar Novo Boleto
+          </button>
+
+          {modalBoletoAberto && (
+            <ModalBoletos
+              onClose={(success, toast) => {
+                setModalBoletoAberto(false);
+
+                if (success) {
+                  carregarBoletos();
+                }
+                if (toast) {
+                  setToast({message: "Boleto cadastrado com sucesso!", type: "Sucesso"});
+                }
+              }}
+            />
+          )}
+
+          <div style={{ width: '100%', paddingTop: '2rem' }}>
+            {boletos.length > 0 ? (
+              boletos.map((boleto) => (
+                <li key={boleto.id} style={{ display: 'flex', width: '100%' }}>
+                  <span style={{ maxWidth: '50%' }}>{boleto.nome_boleto}</span>
+                  <span style={{ maxWidth: '25%' }}>R$ {formatarReaisSemSimboloString(String(boleto.valor_boleto))}</span>
+                  <span style={{ maxWidth: '25%' }}>{boleto.data_vencimento}</span>
+                  <span style={{ maxWidth: '25%' }}>
+                    {boleto.linha_digitavel ? (
+                      <FaBarcode
+                        size={28}
+                        title="Copiar Linha Digitável"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleLinhaDigitavel(boleto.linha_digitavel || '')}
+                      />) : (
+                      <></>
+                    )}
+                  </span>
+                  <span style={{ maxWidth: '25%' }}>
+                    {boleto.status === 'Pago' ? (
+                      <span>Pago</span>
+                    ) : (
+                      <select
+                        value={boleto.status}
+                        onChange={(e) =>
+                          alterarStatusBoleto(boleto.id, e.target.value)
+                        }
+                      >
+                        <option value="Em Aberto">Em Aberto</option>
+                        <option value="Pago">Pago</option>
+                      </select>
+                    )}
+                  </span>
+                  <span style={{ minWidth: '5%', maxWidth: '5%', textAlign: 'center', alignContent: 'center', justifyContent: 'center'   }}>
+                    {boleto.local_foto ? (
+                      <a href={`http://localhost:3000/uploads/`+boleto.local_foto} title="Visualizar boleto" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex' }}>
+                        📷
+                      </a>
+                    ) : (
+                      <>
+                      </>
+                    )}
+                  </span>
+                  <span style={{ minWidth: '5%', maxWidth: '5%', textAlign: 'center', alignContent: 'center', justifyContent: 'center'   }}>
+                    {boleto.status === 'Pago' ? (
+                      <></>
+                    ) : (
+                      <button title='Excluir' className='botao-icone' onClick={() => handleDeleteBoleto(boleto.id)}>🗑️</button>
+                    )}
+                  </span>
+                </li>
+              ))
+            ) : (
+              <h2>Nenhum Boleto encontrado!</h2>
+            )}
+          </div>
+        </div>
+
+) : null
+      }
+    {toast && (
+              <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast(null)}
+              />
+            )}
     </>
   )
 }

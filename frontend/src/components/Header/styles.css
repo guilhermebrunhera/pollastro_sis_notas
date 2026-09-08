@@ -101,3 +101,45 @@ header img {
     align-items: center;
     justify-content: center;
 }
+
+.notificacao-link {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  color: white;
+  text-decoration: none;
+}
+
+.notificacao-link:hover {
+  color: rgb(102, 140, 173);
+  text-decoration: none;
+}
+
+.notificacao-quantidade {
+  position: absolute;
+  top: -8px;
+  right: -7px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+
+  color: white;
+  background-color: red;
+  border: 2px solid #333;
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+}

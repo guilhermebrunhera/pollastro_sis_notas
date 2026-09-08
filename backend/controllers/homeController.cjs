@@ -96,3 +96,99 @@ ORDER BY
         res.json(results);
     });
 };
+
+exports.listarBoletos = (req, res) => {
+  const sql = `
+    SELECT
+      b.id,
+      b.nome_boleto,
+      b.valor_boleto,
+      DATE_FORMAT(b.data_vencimento, '%d/%m/%Y') AS data_vencimento,
+      b.status,
+      b.local_foto,
+      b.linha_digitavel
+    FROM
+      boletos_pagar AS b
+    ORDER BY
+      CASE
+        WHEN b.status = 'Em Aberto' THEN 0
+        ELSE 1
+      END,
+      b.data_vencimento ASC,
+      b.id ASC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err });
+    }
+
+    res.json(results);
+  });
+};
+
+exports.boletoParaVencer = (req, res) => {
+    db.query(`SELECT 
+	    nome_boleto,
+        DATEDIFF(data_vencimento, current_date) as dias_vencimento,
+        valor_boleto,
+        linha_digitavel
+    FROM boletos_pagar
+    WHERE 
+        status = "Em Aberto"
+        AND DATEDIFF(data_vencimento, current_date) <= 4
+    GROUP BY
+        id
+    `, (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+};
+
+exports.deletarBoleto = (req, res) => {
+    const { id } = req.params;  
+    db.query(`DELETE FROM boletos_pagar WHERE id = ?`, [id], (err) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json({message: "Boleto deletado com sucesso!"})
+    })
+}
+
+exports.updateStatusBoleto = (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const updateNotaSQL = `
+            UPDATE boletos_pagar
+            SET status = ?
+            WHERE id = ?
+        `;
+
+    db.query(updateNotaSQL, [status, id], (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        res.json({message: "Status do boleto atualizado com sucesso!"})
+    })
+};
+
+exports.adicionarBoleto = (req, res) => {
+    const { nome_boleto, valor_boleto, data_vencimento, status, linha_digitavel } = req.body;
+    
+    const foto = req.file?.filename || null;
+    const updateNotaSQL = `
+            INSERT INTO boletos_pagar (
+                nome_boleto,
+                valor_boleto,
+                data_vencimento,
+                status,
+                local_foto,
+                linha_digitavel
+            )
+            VALUES (?, ?, ?, ?, ?, ?);
+        `;
+
+    db.query(updateNotaSQL, [nome_boleto, valor_boleto, data_vencimento, status, foto, linha_digitavel], (err) => {
+        if (err) return res.status(500).json({ error: err });
+
+        res.json({success: true, message: "Boleto adicionado com sucesso!"})
+    })
+}

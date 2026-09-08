@@ -12,10 +12,13 @@
   "dependencies": {
     "@types/date-fns": "^2.5.3",
     "@types/react-input-mask": "^3.0.6",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "axios": "^1.8.4",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.0.0",
     "react-date-range": "^2.0.1",
     "react-dom": "^19.0.0",
@@ -23,7 +26,8 @@
     "react-number-format": "^5.4.4",
     "react-router-dom": "^7.5.0",
     "react-select": "^5.10.1",
-    "recharts": "^2.15.3"
+    "recharts": "^2.15.3",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
